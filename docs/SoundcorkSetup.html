@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="fr"><head>
+
+
+
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Installation Soundcork</title>
+    
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 900px;
+            margin: 20px auto;
+            padding: 0 20px;
+            line-height: 1.6;
+            color: #333;
+        }
+        h1, h2, h3, h4 {
+            color: #0056b3;
+        }
+        ul {
+            margin-bottom: 15px;
+        }
+        
+        /* --- Nouveaux styles pour simplifier les blocs de code --- */
+        .code-container {
+            position: relative;
+            margin-bottom: 25px;
+        }
+        pre.code-block {
+            background-color: #f4f4f9;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 45px 15px 15px 15px; /* Espace en haut pour le bouton */
+            font-family: 'Courier New', Courier, monospace;
+            color: #333;
+            overflow-x: auto;
+            white-space: pre-wrap; /* Permet le retour à la ligne auto */
+            margin: 0;
+        }
+        .controls {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            display: flex;
+            align-items: center;
+        }
+        button.copy-btn {
+            padding: 6px 12px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.85em;
+            transition: background-color 0.2s;
+        }
+        button.copy-btn:hover {
+            background-color: #0056b3;
+        }
+        .msg-success {
+            color: green;
+            margin-right: 10px;
+            font-size: 0.85em;
+            font-weight: bold;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .msg-success.show {
+            opacity: 1;
+        }
+        .commande-inline {
+            background-color: #eee;
+            padding: 2px 6px;
+            font-family: 'Courier New', Courier, monospace;
+            border-radius: 4px;
+            color: #d14;
+        }
+    </style></head><body>
+    <h1>Installer Soundcork et soundcork-stockholm-app et quelques outils sur un Raspberry (3B+ ou Zero 2 W mini)</h1>
+    <p>
+        <em>Pour pallier le shutdown Soundtouch du 6 mai 2026.</em>
+    </p>
+    <p>
+        <strong>Note :</strong> Le Raspberry Zero 2 W mini fonctionne très bien <b>sans soundcork-stockholm-app</b>.
+    </p>
+    <hr>
+    
+    <h2>Installation de base</h2>
+    <h4>Matériel :</h4>
+    <ul>
+        <li>Raspberry Zero 2 W minimum, Raspberry Pi 3B+ conseillé</li>
+        <li>Carte micro SD 16 Go minimum classe 10 ou SSD interface USB</li>
+        <li>Carte RJ45 dans le cas de branchement filaire</li>
+        <li>Câble micro USB pour alimentation électrique, à brancher sur port USB de la box/routeur ou sur alimentation officielle Raspberry</li>
+    </ul>
+    
+    <h4>Logiciel :</h4>
+    <ul>
+        <li>Télécharger et installer sur PC <a href="https://downloads.raspberrypi.com/imager/imager_latest.exe">Raspberry Pi Imager</a>
+            <ul>
+                <li>Appareil : Raspberry Pi 3</li>
+                <li>OS : Raspberry Pi OS (other)
+                    <ul>
+                        <li>Raspberry Pi OS Lite (64 bits)</li>
+                    </ul>
+                </li>
+                <li>Stockage : Carte SD&nbsp;</li>
+                <li>Nom d'hôte : vide</li>
+                <li>Utilisateur : pi ; mot de passe : pi</li>
+            </ul>
+        </li>
+    </ul>
+    
+    <p><u>Puis :</u></p>
+    <ul>
+        <li>Installer sur PC Putty ou Kitty (mieux) <a href="https://www.fosshub.com/KiTTY.html?dwl=kitty_portable-0.76.1.13.exe">Lien KiTTY</a></li>
+        <li>Mettre à jour l'OS :</li>
+    </ul>
+
+    <!-- EXEMPLE DE LA NOUVELLE SYNTAXE ULTRA-SIMPLE -->
+<pre class="code-block">sudo apt update &amp;&amp; sudo apt upgrade -y</pre>
+    
+    <h3>Installer des applis</h3>
+    <ul>
+        <li>Installer sc_tools :</li>
+    </ul>
+
+<pre class="code-block">cd $HOME<br>curl -o sc_tools.latest.7z http://phd.dsmynas.net/sc_tools/sc_tools.latest.7z<br>7z x sc_tools.latest.7z -o$HOME/sc_tools/<br>rm sc_tools.latest.7z<br>find ./sc_tools/ -type f -exec chmod 664 {} +<br>find ./sc_tools/ -type f -name "*.sh" -exec chmod 775 {} +<br>find ./sc_tools/ -type d -exec chmod 775 {} +</pre>
+    
+   <ul>
+        <li>Pour le Rapberry Pi zero 2W :</li>
+    </ul>
+
+<pre class="code-block">sudo  ~/sc_tools/tools/swapRpiZero2.sh</pre>
+
+    <ul>
+        <li>Installation de docker :</li>
+    </ul>
+
+<pre class="code-block">curl -fsSL https://get.docker.com -o get-docker.sh<br>sudo sh get-docker.sh<br>sudo usermod -aG docker $USER<br>newgrp docker<br>sudo tee /etc/docker/daemon.json &gt; /dev/null &lt;&lt; 'EOF'<br>{<br>  "dns": ["8.8.8.8", "1.1.1.1"]<br>}<br>EOF<br>sudo systemctl restart docker</pre>
+
+    <ul>
+        <li>Paquets à installer :</li>
+    </ul>
+
+<pre class="code-block">sudo apt-get install $(cat ~/sc_tools/docs/paquets_a_installer.txt) -y<br>sudo apt-get autoremove --purge -y<br><br># Arret du serveur web (pas utile)<br>sudo systemctl stop nginx<br>sudo systemctl disable nginx<br><br># Arret du serveur multimedia (si pas de SSD USB connecté)<br>sudo systemctl stop minidlna.service<br>sudo systemctl disable minidlna.service</pre>
+    
+    <ul>
+        <li>Alias :</li>
+    </ul>
+
+<pre class="code-block">if ! grep -q "alias ll='ls -la'" ~/.bashrc; then<br>    echo "alias ll='ls -la'" &gt;&gt; ~/.bashrc<br>fi<br>source ./.bashrc</pre>
+    
+    <h3>Samba</h3>
+
+<pre class="code-block">sudo cp /etc/samba/smb.conf /etc/samba/smb.conf.bak 2&gt;/dev/null || true<br>sudo tee /etc/samba/smb.conf &gt; /dev/null &lt;&lt; 'EOF'<br>[global]<br>deadtime = 15<br>disable netbios = Yes<br>disable spoolss = Yes<br>dns proxy = No<br>load printers = No<br>logging = file<br>map to guest = Bad User<br>max log size = 1000<br>printcap name = /dev/null<br>security = USER<br>server min protocol = SMB2<br>server role = standalone server<br>smb ports = 445<br>socket options = TCP_NODELAY IPTOS_LOWDELAY<br>idmap config * : backend = tdb<br>posix locking = No<br>printing = bsd<br>strict locking = No<br>use sendfile = Yes<br>veto files = /.git/node_modules/.cache/<br><br>[pi]<br>create mask = 0777<br>directory mask = 0777<br>force user = pi<br>guest ok = Yes<br>level2 oplocks = No<br>oplocks = No<br>path = /home/pi<br>read only = No<br>EOF</pre>
+    
+    <ul>
+        <li>Utilisateur et démarrage samba :</li>
+    </ul>
+
+<pre class="code-block">(echo "pi"; echo "pi") | sudo smbpasswd -s -a pi<br>sudo systemctl restart smbd</pre>
+    
+    <h3>Installer soundcork et soundcork-stockholm-app</h3>
+    <ul>
+        <li>Clonage des git :</li>
+    </ul>
+
+<pre class="code-block">cd $HOME &amp;&amp; git clone https://github.com/deborahgu/soundcork.git<br>git clone https://github.com/krahl/soundcork-stockholm-app.git</pre>
+    
+    <ul>
+        <li>Configurations par défaut :</li>
+    </ul>
+
+<pre class="code-block">cd ~/sc_tools/docs &amp;&amp; find . -type f -name "*.etalon" -exec cp --parents {} ~/ \; &amp;&amp; cd</pre>
+    
+    <ul>
+        <li>Recherche journalière de mise à jour (ajouter la ligne dans crontab) :</li>
+    </ul>
+
+<pre class="code-block">( crontab -l ; echo "0 3 * * * /home/pi/sc_tools/update/updater.sh" ) | crontab -</pre>
+    
+    <ul>
+        <li>Changer le nom du Raspberry en soundcork :</li>
+    </ul>
+
+<pre class="code-block">sudo raspi-config nonint do_hostname soundcork</pre>
+
+    <hr>
+    
+    <ul>
+        <li>Arrêter wifi et BlueTooth :</li>
+    </ul>
+
+<pre class="code-block">echo "dtoverlay=disable-bt" | sudo tee -a /boot/firmware/config.txt<br>echo "dtoverlay=disable-wifi" | sudo tee -a /boot/firmware/config.txt<br>echo "Effectif au prochain démarrage"</pre>
+    
+    <ul>
+        <li>Modifier les configurations avec les adresses ip locales :</li>
+    </ul>
+
+<pre class="code-block">~/sc_tools/tools/change_cfg.sh<br>~/sc_tools/tools/change_ip.sh</pre>
+
+    <hr>
+    
+    <h2>Enceintes</h2>
+    <ul>
+        <li>Il faut rooter au moins une enceinte :</li>
+		<ul>
+			<li>Méthode logicielle <a href="#root">voir plus bas</a></li>
+			<li>Méthode matérielle :
+				<p><em>Si possible, l'enceinte la plus utilisée.<br>
+				Certaines machines ne sont pas rootables ainsi ex: Wireless Link adapter (WLA), ...</em></p>
+			</li>
+				<ul>
+					<li>C'est un état provisoire afin de récupérer le fichier Sources.xml</li>
+					<li>Brancher une clé USB à formater.<br>
+					Cette clé ne doit contenir qu'un seul fichier vide 'remote_services'.<br>
+					Connecter la clé dans le port USB de l'enceinte au préalable.</li>
+				</ul>
+		</ul>
+    </ul>
+    
+<pre class="code-block">~/sc_tools/tools/create_remote_services.sh</pre>
+    
+    <ul>
+        <li>Débranchez l'enceinte du secteur, attendez 2 mn, rebranchez, attendez 3 à 4mn.</li>
+    </ul>
+    
+    <p id="Cdata"><strong>Elles doivent toutes être allumée et connectées au réseau (filaire ou wifi).</strong></p>
+    
+    <ul>
+        <li>Configuration des enceintes :
+            <ul>
+                <li>Remplacer les serveurs Bose par soundcork local sur les enceintes</li>
+                <li>Création de la base de données soundcork</li>
+                <li>Vérification de la base de données soundcork<br>
+                    <strong>Bien lire le compte rendu final</strong>
+                </li>
+            </ul>
+        </li>
+    </ul>
+    
+<pre class="code-block">~/sc_tools/tools/change_marge.sh<br>~/sc_tools/tools/create_data.sh<br>~/sc_tools/tools/control_data.sh</pre>
+    
+    <ul>
+        <li>S'il y a plusieurs comptes, en choisir 1 (sous la forme 7654321 - soundcork y tient) :
+            <ul>
+                <li>Remplacer sur les enceintes pour qu'elles aient le même compte</li>
+                <li>Remplacer le compte propre à chaque site sur toutes les enceintes étrangères au compte choisi :</li>
+            </ul>
+        </li>
+    </ul>
+    
+<pre class="code-block">~/sc_tools/tools/change_accountId.sh</pre>
+    
+    <ul>
+        <li>Relancer création et vérification :<br>
+        jusqu'au message : <strong>Toutes les enceintes utilisent le même margeAccountUUID</strong><br>
+        <span class="commande-inline">~/sc_tools/tools/create_data.sh</span><br>
+        <span class="commande-inline">~/sc_tools/tools/control_data.sh</span>
+        </li>
+    </ul>
+    
+    <h3>Quand tout est correct, un dossier /home/pi/soundcork/dataX est créé</h3>
+    <ul>
+        <li>Renommer :</li>
+    </ul>
+    
+<pre class="code-block">mv ~/soundcork/dataX ~/soundcork/data</pre>
+    <hr>
+    
+    <h2>Lancement des applis</h2>
+    <h4>Mise en route sans soundcork-stockholm-app</h4>
+    <p><strong>Pour Raspberry Zero 2 W (pas assez de RAM)</strong></p>
+    
+<pre class="code-block">cd ~/soundcork<br>docker compose up -d --build  # -d pour l'avoir en deamon<br>docker compose stop           # pour garder de la puissance pour la suite<br><br>cd ~/sc_tools<br>docker compose up -d --build <br><br>cd ~/soundcork<br>docker compose start</pre>
+    
+    <h4>Mise en route avec soundcork-stockholm-app</h4>
+
+<pre class="code-block">cd ~/soundcork<br>docker compose up -d --build  # -d pour l'avoir en deamon<br>docker compose stop           # pour garder de la puissance pour la suite<br><br>cd ~/sc_tools<br>docker compose up -d --build <br>docker compose stop           # pour garder de la puissance pour la suite<br><br>cd ~/soundcork-stockholm-app<br>curl -o ~/soundcork-stockholm-app/stockholm_zip/stockholm.zip http://phd.dsmynas.net/sc_tools/stockholm.zip<br>docker compose -f docker-compose.yml -f docker-compose.build.yml up --build -d <br><br>cd ~/soundcork<br>docker compose start<br>cd ~/sc_tools<br>docker compose start<br>~/sc_tools/tools/docker_menage.sh</pre>
+    <hr>
+    
+    <h2>Utilisation</h2>
+    <p>Maintenant tout est prêt le Raspberry doit tourner en permanence.</p>
+    <ul>
+        <li>Sur un navigateur :
+            <ul>
+                <li>Etat des enceintes : <a href="http://soundcork:8000/admin">http://soundcork:8000/admin</a></li>
+                <li>MiniApp pour faire des manips simples : <a href="http://soundcork:8000/">http://soundcork:8000</a></li>
+                <li>L'appli Bose SoundTouch complète : <a href="http://soundcork:8088/">http://soundcork:8088</a></li>
+                <li>Télécommande globale : <a href="http://soundcork/">http://soundcork</a></li>
+            </ul>
+        </li>
+    </ul>
+    <p><strong>Conseil :</strong> Utilisez <a href="http://soundcork/">http://soundcork</a> il y a les liens vers les autres applis dans le menu "Administration".</p>
+    <hr>
+    
+    <h2>Conseils &amp; Dépannage</h2>
+    <ul>
+        <li><strong>Sur la box ou routeur :</strong>
+            <ul>
+                <li>Dans DHCP, fixer en permanent l'adresse IP du Raspberry.</li>
+                <li>Dans DNS, fixer le nom soundcork.</li>
+            </ul>
+        </li>
+    </ul>
+    
+    <h3>En cas de déménagement ou changement de box routeur</h3>
+    <ul>
+        <li>Si le préfixe IP n'a pas bougé : Juste refaire la manip en mettant bien l'IP que possédait le Raspberry.</li>
+        <li>Si le préfixe IP a bougé :
+            <ul>
+                <li>Remplacer les serveurs Bose : <span class="commande-inline">~/sc_tools/tools/change_marge.sh</span></li>
+                <li>Recréer DB : <span class="commande-inline">~/sc_tools/tools/create_data.sh</span></li>
+                <li>Vérifier DB : <span class="commande-inline">~/sc_tools/tools/control_data.sh</span></li>
+                <li>Adapter IP : <span class="commande-inline">~/sc_tools/change_cfg.sh</span> et <span class="commande-inline">~/sc_tools/change_ip.sh</span></li>
+            </ul>
+        </li>
+    </ul>
+    
+    <h3>Ajout d'une nouvelle enceinte</h3>
+    <ul>
+        <li>La rentrer dans l'ensemble
+            <ul>
+                <li>Réinitialisation usine : voir documention ou <span class="commande-inline">Vol- et 1</span> (quand elle munie d'un panel)</li>
+                <li>Connexion au réseau : voir documention (wifi ou filaire)</li>
+                <li>Trouver l'IP de l'enceinte : <span class="commande-inline">~/sc_tools/tools/discoverST.sh</span></li>
+                <li>Change le compte du site : <span class="commande-inline">~/sc_tools/tools/change_accountId.sh</span></li>
+                <li>Remplacer les serveurs Bose : <span class="commande-inline">~/sc_tools/tools/change_marge.sh</span></li>
+                <li>Intégrer à soundcork : <span class="commande-inline"><a href="http://soundcork:8000/admin">http:/soundcork:8000/admin</a></span> sur navigateur, suivre les indications</li>
+            </ul>
+        </li>
+    </ul>
+    <hr>
+    
+    <h1>Sources et autres infos</h1>
+    <h3>changer le serveur cloud</h3>
+    <p>Sur une console Raspberry :</p>
+
+<pre class="code-block">nc &lt;192.168.1.Ip_Enceinte&gt; 17000<br>sys configuration bmxRegistryUrl http://192.168.1.116:8000/bmx/registry/v1/services<br>sys configuration bmxRegistryUrl http://192.168.1.116:8000/bmx/registry/v1/services<br>sys configuration statsServerUrl http://192.168.1.116:8000<br>sys configuration margeServerUrl http://192.168.1.116:8000/marge<br>sys configuration swUpdateUrl http://192.168.1.116:8000/updates/soundtouch<br>envswitch boseurls set http://192.168.1.116:8000/marge http://192.168.1.116:8000/updates/soundtouch<br>getpdo CurrentSystemConfiguration</pre>
+
+    <p><em>Il faut taper la première commande 2 fois pour que l'enceinte écoute ;)</em></p>
+    
+    <ul>
+        <li>Changer le AccountID (margeAccountUUID) :</li>
+    </ul>
+
+<pre class="code-block">nc &lt;192.168.1.Ip_Enceinte&gt; 17000<br>envswitch AccountId get<br>envswitch AccountId set 5476586<br>sys reboot</pre>
+    
+    <ul>
+        <li>Rebooter à distance une enceinte rootée ou non :</li>
+    </ul>
+
+<pre class="code-block">echo "sys reboot" | nc 192.168.1.25 17000</pre>
+    
+	<h3 id="root">Rooter une enceinte, méthode logicielle :</h3>
+	<ul>
+		<li>1- Choisir une enceinte :</li>
+	</ul>
+
+<pre class="code-block">~/sc-tools/tools/discoverST -b</pre>
+    
+	<ul>
+		<li>2- rooter l'enceinte choisie (ne fonctionne pas sur les portables génération 1) :</li>
+	</ul>
+
+<pre class="code-block">~/sc-tools/tools/rootST.sh ??  #suffixe de l'adresse IP (ex: 65)<br>~/sc-tools/tools/rebootST.sh ??  # (ex: 65)</pre>
+    
+    <ul>
+		<li>3- <a href="#Cdata">Reprendre</a> la procédure :</li>
+    </ul>
+
+
+<h2>Installation de tailscale (vpn) :</h2>
+Tailscale va créer un tunnel sécurisé direct entre votre smartphone et
+votre Raspberry Pi, sans que vous n'ayez à ouvrir le moindre port sur
+votre box.<br>
+Voici comment mettre cela en place en quelques minutes.<br>
+<h3>Étape 1 : Créer un compte Tailscale</h3>
+
+Avant de toucher aux appareils, allez sur le site officiel <a href="tailscale.com">tailscale.com</a>
+depuis votre ordinateur et créez un compte gratuit (vous pouvez
+utiliser un compte Google, Microsoft, Apple ou GitHub pour vous
+connecter facilement).<br>
+<h3>Étape 2 : Installer Tailscale sur le Raspberry Pi</h3>
+Retournez sur le terminal de votre Raspberry Pi (via SSH) et exécutez la commande d'installation officielle :<br>
+
+<pre class="code-block">curl -fsSL https://tailscale.com/install.sh | sh</pre>
+
+<span style="font-style: italic;">Le script va détecter que vous êtes sur un système basé sur Debian/Raspbian et installer les bons paquets.</span><br style="font-style: italic;">
+<br>
+Une fois l'installation terminée, démarrez le service avec cette commande :<br>
+<pre class="code-block">sudo tailscale up</pre>
+<br>
+<span style="font-style: italic; text-decoration: underline; font-weight: bold;">Que va-t-il se passer ?</span>
+<br style="font-weight: bold;">
+Le terminal va afficher une longue URL (un lien web).<br>
+1. Copiez ce lien et collez-le dans le navigateur de votre PC.<br>
+2. Connectez-vous avec le compte Tailscale que vous venez de créer.<br>
+3. Cliquez sur "Connect" ou "Authorize".<br>
+Votre Raspberry Pi est maintenant intégré à votre réseau privé virtuel !<br>
+<h3>Étape 3 : Récupérer l'adresse IP "magique"</h3>
+
+Toujours sur le Raspberry Pi, tapez la commande suivante :<br>
+<pre class="code-block">tailscale ip -4</pre>
+
+Cela va vous renvoyer une adresse IP (qui commence généralement par `100.x.x.x`).
+<span style="font-weight: bold; font-style: italic; text-decoration: underline;">Notez précieusement cette adresse IP</span>.
+<br>
+Désormais, tant que Tailscale est actif, c'est cette adresse que vous
+utiliserez pour communiquer avec votre Raspberry Pi depuis n'importe où
+dans le monde, comme s'il était dans votre poche.<br>
+<h3>Étape 4 : Configurer le smartphone Android</h3>
+
+1. Prenez votre smartphone et allez sur le **Google Play Store**.<br>
+2. Cherchez et installez l'application **Tailscale**.<br>
+3. Ouvrez l'application et connectez-vous avec le **même compte** que celui utilisé à l'étape 1.<br>
+4. Vous verrez apparaître votre Raspberry Pi dans la liste des appareils de l'application.<br>
+5. Basculez l'interrupteur en haut à gauche pour activer Tailscale
+(Android vous demandera l'autorisation d'activer une connexion VPN,
+acceptez).<br>
+<br>
+Vous verrez alors une petite icône de clé (ou de bouclier) dans la
+barre de notifications de votre téléphone, indiquant que vous êtes
+connecté à votre réseau privé.<br>
+<h3>Étape 5 : Connecter votre application musicale en 4G</h3>
+Maintenant que le lien est établi, il suffit de configurer votre application cliente (comme Symfonium ou DSub) :<br>
+1. Désactivez le Wi-Fi de votre téléphone pour être en <span style="font-style: italic; font-weight: bold; text-decoration: underline;">4G/5G</span>.<br>
+2. Ouvrez votre application musicale et allez dans l'ajout de serveur (type Subsonic/Navidrome).<br>
+3. Dans le champ "Adresse du serveur" (ou URL), entrez :
+`http://VOTRE_IP_TAILSCALE:4533` (remplacez par l'adresse IP en
+`100.x.x.x` notée à l'étape 3).<br>
+4. Entrez vos identifiants Navidrome (créés lors du premier lancement de Navidrome).<br>
+<br>
+Et voilà ! Votre application va se connecter à votre Raspberry Pi de
+manière totalement sécurisée et chiffrée, que vous soyez dans le bus,
+au travail, ou à l'autre bout du monde.<br>
+<br>
+<span style="font-style: italic;">Petite astuce : Pensez à laisser l'application Tailscale tourner en
+arrière-plan sur votre téléphone (ou lancez-la simplement avant de
+vouloir écouter votre musique en extérieur).</span><br>
+<br>
+
+    <!-- SCRIPT DE GÉNÉRATION AUTOMATIQUE DES BOUTONS DE COPIE -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // On sélectionne tous les blocs de code
+            const codeBlocks = document.querySelectorAll('pre.code-block');
+            
+            codeBlocks.forEach(pre => {
+                // 1. On crée un conteneur autour du <pre> pour gérer le positionnement
+                const wrapper = document.createElement('div');
+                wrapper.className = 'code-container';
+                pre.parentNode.insertBefore(wrapper, pre);
+                wrapper.appendChild(pre);
+
+                // 2. On crée l'interface du bouton (div > span + button)
+                const controls = document.createElement('div');
+                controls.className = 'controls';
+
+                const msg = document.createElement('span');
+                msg.className = 'msg-success';
+                msg.textContent = 'Copié ✔';
+
+                const btn = document.createElement('button');
+                btn.className = 'copy-btn';
+                btn.textContent = 'Copier';
+                btn.type = 'button';
+
+                controls.appendChild(msg);
+                controls.appendChild(btn);
+                wrapper.appendChild(controls); // On ajoute l'UI en haut à droite
+
+                // 3. Gestion de l'événement clic
+                btn.addEventListener('click', () => {
+                    const codeToCopy = pre.textContent; // Récupère le texte brut du code
+                    
+                    const showSuccess = () => {
+                        msg.classList.add('show');
+                        setTimeout(() => msg.classList.remove('show'), 2000);
+                    };
+
+                    // API moderne pour la copie
+                    if (navigator.clipboard) {
+                        navigator.clipboard.writeText(codeToCopy).then(showSuccess).catch(err => {
+                            console.error('Erreur Clipboard API : ', err);
+                        });
+                    } else {
+                        // Méthode de secours (fallback) pour les anciens navigateurs
+                        const textarea = document.createElement('textarea');
+                        textarea.value = codeToCopy;
+                        document.body.appendChild(textarea);
+                        textarea.select();
+                        try {
+                            if (document.execCommand('copy')) showSuccess();
+                        } catch (err) {
+                            console.error('Erreur execCommand : ', err);
+                        }
+                        document.body.removeChild(textarea);
+                    }
+                });
+            });
+        });
+    </script>
+
+</body></html>

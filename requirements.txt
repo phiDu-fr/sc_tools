@@ -1,0 +1,11 @@
+flask
+requests
+zeroconf
+APScheduler==3.10.4
+upnpclient==1.0.3
+beautifulsoup4
+pydantic
+fastapi
+uvicorn
+Flask-SocketIO
+websocket-client

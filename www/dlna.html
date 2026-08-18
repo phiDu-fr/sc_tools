@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<!-- PWA et Manifest -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#121212">
+
+    <!-- Optimisations spécifiques pour iOS (Apple) -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="SoundCork">
+    <link rel="apple-touch-icon" href="img/icon-192.png">
+
+    <title>Musique Locale - SoundTouch</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="stylesheet" href="css/global.css">
+    <style>
+        .dlna-nav-header { 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between;
+            background-color: var(--bg-elevated); 
+            padding: 15px 20px; 
+            border-radius: 8px; 
+            margin-bottom: 20px; 
+        }
+        .dlna-path-container { display: flex; align-items: center; gap: 15px; flex: 1;}
+        .current-path { font-size: 16px; font-weight: bold; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
+        
+        .list-content { display: flex; flex-direction: column; gap: 8px; padding-bottom: 20px; }
+        
+        .dlna-item { 
+            display: flex; 
+            align-items: center; 
+            padding: 10px 15px; 
+            background-color: var(--bg-elevated); 
+            border-radius: 6px; 
+            cursor: pointer; 
+            transition: background-color 0.2s; 
+        }
+        .dlna-item:hover { background-color: var(--bg-highlight); }
+        
+        .item-icon-wrapper { 
+            width: 45px; 
+            height: 45px; 
+            background-color: #333; 
+            border-radius: 4px; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            margin-right: 15px; 
+            font-size: 20px; 
+            flex-shrink: 0;
+            overflow: hidden;
+        }
+        .item-img { width: 100%; height: 100%; object-fit: cover; }
+        .item-details { flex: 1; overflow: hidden; }
+        .item-title { font-weight: bold; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 2px;}
+        .item-subtitle { font-size: 12px; color: var(--text-subdued); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
+
+        .status-bar { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background-color: #333; color: white; padding: 12px 24px; border-radius: 500px; font-weight: bold; box-shadow: 0 8px 24px rgba(0,0,0,0.5); z-index: 2000; display: none; transition: opacity 0.3s; }
+        .status-success { background-color: var(--spotify-green); color: black; }
+        .status-error { background-color: #FA243C; color: white;}
+        .status-warning { background-color: #FF9900; color: black;}
+    </style>
+</head>
+<body>
+
+    <div id="status-bar" class="status-bar">Notification</div>
+
+    <div class="main-container">
+        <div id="mobile-overlay" class="sidebar-overlay" onclick="toggleMobileMenu()"></div>
+        <nav class="sidebar"></nav>
+
+        <main class="main-view">
+            
+            <div class="top-bar">
+                <!-- <div style="display: flex; width: 100%; align-items: center;"> -->
+				<div style="display: flex; flex: 1; min-width: 0; align-items: center;">
+                    <button class="mobile-menu-btn" onclick="toggleMobileMenu(event)">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    
+                    <div class="search-container" style="margin-left: 10px;">
+                        <input type="text" id="search-input" class="search-input" placeholder="Rechercher une musique...">
+                        <select id="search-type" class="search-select">
+                            <option value="all" selected>Tous</option>
+                            <option value="title">Titre</option>
+                            <option value="artist">Artiste</option>
+                            <option value="album">Album</option>
+                        </select>
+                        <button class="btn-search" onclick="searchDLNA()">Rechercher</button>
+ 						<h2>Données locales</h2>
+                   </div>
+                </div>
+                
+                <!-- <div class="sources-wrapper" id="sources-wrapper" style="max-width: 150px; width: 20%; margin: 0 15px;"></div> -->
+                <div class="remote-wrapper" id="remote-wrapper" style="max-width: 250px; width: 20%; margin: 0 15px;"></div>
+            </div>
+
+            <div class="dlna-nav-header">
+                <div class="dlna-path-container">
+                    <button class="btn-action" id="backBtn" onclick="goBack()" style="width: auto; display: none; padding: 6px 15px;">
+                        <i class="fas fa-arrow-left"></i> Retour
+                    </button>
+                    <h3 id="current-path" class="current-path">Recherche du serveur...</h3>
+                </div>
+                
+                <button class="btn-action" id="btn-repeat" onclick="toggleDLNARepeat()" style="width: auto; padding: 6px 15px;" title="Répéter la file locale">
+                    <i class="fas fa-redo"></i>
+                </button>
+            </div>
+
+            <div class="list-content" id="content-list">
+                <div style="text-align: center; color: var(--text-subdued); margin-top: 40px;">
+                    <div class="loader" style="margin: 0 auto 15px auto;"></div>
+                    Connexion au serveur local (MiniDLNA)...
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <footer class="player-bar"></footer>
+
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+	<script src="js/app.js"></script>
+    
+    <script>
+        let currentUdn = null;
+        let navigationHistory = [];
+        let currentFolderAudioItems = []; 
+        let isDlnaRepeatActive = false;
+        const rootDlnaName = "Ma Musique";
+
+        async function syncDLNAStatus() {
+            if (typeof getSelectedIps !== "function") return; 
+            
+            const ips = getSelectedIps();
+            if (ips.length === 0) return;
+            
+            try {
+                const res = await fetch(`/api/queue/status?ip=${ips[0]}`);
+                const data = await res.json();
+                
+                const btn = document.getElementById('btn-repeat');
+                if (btn) {
+                    if (data.repeat) {
+                        btn.classList.add('btn-action-primary');
+                    } else {
+                        btn.classList.remove('btn-action-primary');
+                    }
+                }
+            } catch(e) {}
+        }
+
+        setTimeout(syncDLNAStatus, 1000);
+        setInterval(syncDLNAStatus, 4000);
+		
+        function showNotification(msg, type = "warning") {
+            const statusBar = document.getElementById('status-bar');
+            statusBar.innerText = msg;
+            statusBar.className = `status-bar status-${type}`;
+            statusBar.style.display = 'block';
+            setTimeout(() => { statusBar.style.display = 'none'; }, 3000);
+        }
+
+		document.addEventListener("DOMContentLoaded", () => {
+            const initCheck = setInterval(() => {
+                if (typeof hasInitializedSpeakers !== 'undefined' && hasInitializedSpeakers) {
+                    clearInterval(initCheck);
+                    loadServers();
+                }
+            }, 100);
+
+            document.addEventListener('change', (e) => {
+                if (e.target && e.target.classList.contains('speaker-checkbox')) {
+                    if (navigationHistory.length === 0) {
+                        loadServers();
+                    }
+                }
+            });
+
+            const searchInput = document.getElementById('search-input');
+            if (searchInput) {
+                searchInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') searchDLNA();
+                });
+            }
+        });
+
+        async function loadServers() {
+            currentUdn = null; 
+            navigationHistory = [];
+            document.getElementById('backBtn').style.display = 'none';
+            document.getElementById('current-path').innerText = rootDlnaName;
+            
+            try {
+                const response = await fetch('/api/dlna/servers');
+                const servers = await response.json();
+                
+                const dockerServer = servers.find(s => s.name.toLowerCase().includes('soundcork') || s.name.toLowerCase().includes('minidlna'));
+                
+                if (dockerServer) {
+                    currentUdn = dockerServer.udn;
+                    const rootResponse = await fetch(`/api/dlna/browse?udn=${encodeURIComponent(dockerServer.udn)}&id=0`);
+                    const rootItems = await rootResponse.json();
+                    
+                    if (rootItems.error) throw new Error(rootItems.error);
+                    
+                    let musicFolder = null;
+                    if (Array.isArray(rootItems)) {
+                        musicFolder = rootItems.find(i => i.title.toLowerCase() === 'music' || i.title.toLowerCase() === 'musique');
+                    }
+                    
+                    if (musicFolder) {
+                        browseFolder(dockerServer.udn, musicFolder.id, rootDlnaName);
+                    } else {
+                        browseFolder(dockerServer.udn, '0', rootDlnaName);
+                    }
+                } else {
+                    document.getElementById('content-list').innerHTML = '<p style="text-align:center; margin-top:40px; color:#FA243C;">Serveur Media introuvable.<br><small style="color:var(--text-subdued)">Patientez 30s s\'il vient d\'être redémarré.</small></p>';
+                }
+            } catch (e) {
+                console.error("Erreur serveur :", e);
+                document.getElementById('content-list').innerHTML = '<p style="text-align:center; color:#FA243C; margin-top:40px;">Erreur de connexion au serveur DLNA.</p>';
+            }
+        }
+
+        async function browseFolder(udn, objectId, title) {
+            currentUdn = udn;
+            navigationHistory.push({id: objectId, title: title});
+            
+            document.getElementById('backBtn').style.display = (navigationHistory.length > 1) ? 'block' : 'none';
+            document.getElementById('current-path').innerText = title;
+            document.getElementById('content-list').innerHTML = '<div style="text-align: center; color: var(--text-subdued); margin-top: 40px;"><div class="loader" style="margin: 0 auto 15px auto;"></div>Chargement du dossier...</div>';
+
+            try {
+                const response = await fetch(`/api/dlna/browse?udn=${encodeURIComponent(udn)}&id=${encodeURIComponent(objectId)}`);
+                const items = await response.json();
+                
+                if (items.error) {
+                    document.getElementById('content-list').innerHTML = `<p style="text-align:center; color:#FA243C; margin-top:40px;"><i class="fas fa-exclamation-triangle"></i> Impossible d'ouvrir ce dossier : ${items.error}</p>`;
+                    return;
+                }
+                
+                if (!Array.isArray(items) || items.length === 0) {
+                    document.getElementById('content-list').innerHTML = `<p style="text-align:center; color:var(--text-subdued); margin-top:40px;">Ce dossier est vide.</p>`;
+                    return;
+                }
+
+                currentFolderAudioItems = items.filter(i => i.type === 'audio');
+                let html = '';
+
+                items.forEach((item) => {
+                    if (item.type === 'folder') {
+                        html += `
+                            <div class="dlna-item" onclick="browseFolder('${udn}', '${item.id}', '${item.title.replace(/'/g, "\\'")}')">
+                                <div class="item-icon-wrapper" style="background-color: transparent;"><i class="fas fa-folder" style="color: #FFC107; font-size: 28px;"></i></div>
+                                <div class="item-details">
+                                    <div class="item-title">${item.title}</div>
+                                </div>
+                                <i class="fas fa-chevron-right" style="color: var(--text-subdued);"></i>
+                            </div>`;
+                    } else {
+                        const audioIndex = currentFolderAudioItems.findIndex(i => i.id === item.id);
+                        const coverHtml = item.cover 
+                            ? `<img src="${item.cover}" class="item-img" onerror="this.style.display='none'">` 
+                            : `<i class="fas fa-music" style="color: var(--text-subdued);"></i>`;
+                            
+                        html += `
+                            <div class="dlna-item" onclick="sendPlaylistToServer(${audioIndex})">
+                                <div class="item-icon-wrapper">${coverHtml}</div>
+                                <div class="item-details">
+                                    <div class="item-title">${item.title}</div>
+                                    <div class="item-subtitle">${item.artist || 'Artiste inconnu'}</div>
+                                </div>
+                            </div>`;
+                    }
+                });
+                document.getElementById('content-list').innerHTML = html;
+
+            } catch (e) {
+                console.error("Erreur de navigation :", e);
+                document.getElementById('content-list').innerHTML = `<p style="text-align:center; color:#FA243C; margin-top:40px;"><i class="fas fa-exclamation-triangle"></i> Erreur lors de la lecture du dossier.</p>`;
+            }
+        }
+
+        async function searchDLNA() {
+            const query = document.getElementById('search-input').value.trim();
+            const searchType = document.getElementById('search-type').value;
+            
+            if (!query) {
+                return loadServers();
+            }
+
+            if (!currentUdn) {
+                showNotification("Aucun serveur DLNA connecté.", "error");
+                return;
+            }
+
+            navigationHistory.push({ id: 'search', title: `Résultats pour "${query}"` });
+            
+            document.getElementById('backBtn').style.display = 'block';
+            document.getElementById('current-path').innerText = `Résultats pour "${query}"`;
+            document.getElementById('content-list').innerHTML = '<div style="text-align: center; color: var(--text-subdued); margin-top: 40px;"><div class="loader" style="margin: 0 auto 15px auto;"></div>Recherche en cours...</div>';
+
+            try {
+                const response = await fetch('/api/dlna/search', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ udn: currentUdn, query: query, type: searchType })
+                });
+                
+                const items = await response.json();
+                
+                if (items.error) {
+                    document.getElementById('content-list').innerHTML = `<p style="text-align:center; color:#FA243C; margin-top:40px;"><i class="fas fa-exclamation-triangle"></i> Erreur : ${items.error}</p>`;
+                    return;
+                }
+                
+                if (!Array.isArray(items) || items.length === 0) {
+                    document.getElementById('content-list').innerHTML = `<p style="text-align:center; color:var(--text-subdued); margin-top:40px;">Aucun résultat trouvé pour "${query}".</p>`;
+                    return;
+                }
+
+                currentFolderAudioItems = items;
+                let html = '';
+
+                items.forEach((item, index) => {
+                    const coverHtml = item.cover 
+                        ? `<img src="${item.cover}" class="item-img" onerror="this.style.display='none'">` 
+                        : `<i class="fas fa-music" style="color: var(--text-subdued);"></i>`;
+                        
+                    html += `
+                        <div class="dlna-item" onclick="sendPlaylistToServer(${index})">
+                            <div class="item-icon-wrapper">${coverHtml}</div>
+                            <div class="item-details">
+                                <div class="item-title">${item.title}</div>
+                                <div class="item-subtitle">${item.artist || 'Artiste inconnu'} ${item.album ? '• ' + item.album : ''}</div>
+                            </div>
+                        </div>`;
+                });
+                document.getElementById('content-list').innerHTML = html;
+
+            } catch (e) {
+                console.error("Erreur de recherche :", e);
+                document.getElementById('content-list').innerHTML = `<p style="text-align:center; color:#FA243C; margin-top:40px;"><i class="fas fa-exclamation-triangle"></i> Erreur de communication avec le serveur.</p>`;
+            }
+        }
+
+        function goBack() {
+            if (navigationHistory.length > 1) {
+                navigationHistory.pop(); 
+                const parent = navigationHistory.pop(); 
+                
+                if (parent.id === 'search') {
+                    loadServers();
+                } else {
+                    browseFolder(currentUdn, parent.id, parent.title);
+                }
+            }
+        }
+
+        async function sendPlaylistToServer(startIndex) {
+            const ips = getSelectedIps();
+            if (ips.length === 0) return showNotification("Sélectionnez au moins une enceinte active.", "error");
+            
+            showNotification("⏳ Préparation de la file d'attente...", "warning");
+            
+            try {
+                await fetch('/api/queue/play', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ips: ips, tracks: currentFolderAudioItems, index: startIndex })
+                });
+                showNotification("✅ Lecture lancée !", "success");
+                
+                setTimeout(() => { if(typeof fetchState === 'function') fetchState(); }, 1500);
+            } catch (e) {
+                showNotification("❌ Erreur réseau.", "error");
+            }
+        }
+
+        async function toggleDLNARepeat() {
+            const ips = getSelectedIps();
+            if (ips.length === 0) return showNotification("Sélectionnez une enceinte pour piloter la file.", "error");
+            
+            try {
+                const res = await fetch('/api/queue/control', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ip: ips[0], action: 'toggle_repeat' })
+                });
+                const data = await res.json();
+                
+                const btn = document.getElementById('btn-repeat');
+                if (data.repeat) {
+                    btn.classList.add('btn-action-primary');
+                    showNotification("🔁 Répétition de la file activée", "success");
+                } else {
+                    btn.classList.remove('btn-action-primary');
+                    showNotification("➡️ Répétition désactivée", "warning");
+                }
+            } catch(e) {
+                console.error("Erreur toggle repeat DLNA:", e);
+            }
+        }
+    </script>
+</body>
+</html>

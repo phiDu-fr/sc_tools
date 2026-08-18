@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<!-- PWA et Manifest -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#121212">
+
+    <!-- Optimisations spécifiques pour iOS (Apple) -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="SoundCork">
+    <link rel="apple-touch-icon" href="img/icon-192.png">
+
+    <title>Télécommande Complète - SoundTouch</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="stylesheet" href="css/global.css">
+	<style>
+			/* 1. Le conteneur s'étire pour occuper tout l'espace libre de l'écran */
+			.big-remote-wrapper {
+				display: flex;
+				justify-content: center;
+				align-items: center;
+				width: 100%;
+				flex: 1; /* Prend toute la hauteur disponible dans le <main> */
+				margin: 0 auto;
+				padding-bottom: 20px;
+			}
+			
+			/* 2. La télécommande calcule sa taille max sans jamais provoquer de scroll */
+			#big-remote-wrapper svg {
+				width: 100%;
+				height: auto;
+				/* Le calcul magique : Hauteur de l'écran visible (100dvh) - TopBar - Player (Footer) */
+				max-height: calc(100dvh - 200px); 
+				/* On limite la largeur à 450px pour que sur un écran d'ordinateur, la télécommande ne fasse pas 2 mètres de large ! */
+				max-width: 450px; 
+				display: block;
+				filter: drop-shadow(0 15px 25px rgba(0,0,0,0.5));
+			}
+		</style>
+</head>
+<body>
+    <div id="status-bar" class="status-bar">Notification</div>
+
+    <div class="main-container">
+        <div id="mobile-overlay" class="sidebar-overlay" onclick="toggleMobileMenu()"></div>
+        <nav class="sidebar"></nav>
+
+        <main class="main-view">
+            <div class="top-bar">
+                <div style="display: flex; width: 100%; align-items: center;">
+                    <button class="mobile-menu-btn" onclick="toggleMobileMenu(event)">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <h2 class="section-title" style="margin: 0; padding-left: 15px;"></h2>  <!-- Télécommande -->
+                </div>
+            </div>
+
+            <div class="big-remote-wrapper" id="big-remote-wrapper">
+                <div class="loader"></div>
+            </div>
+        </main>
+    </div>
+
+    <footer class="player-bar"></footer>
+
+	<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="js/app.js"></script>
+    <script>
+        let currentShuffle = "SHUFFLE_OFF";
+        let currentRepeat = "REPEAT_OFF";
+
+        // --- ALIAS POUR RÉTROCOMPATIBILITÉ SVG ---
+        // (Évite d'avoir à modifier manuellement tous les boutons dans remotebig.svg)
+        window.sendKey = async function(keyName) { if(typeof sendCommand === "function") await sendCommand(keyName); };
+        window.sendPreset = async function(id) { if(typeof playPreset === "function") await playPreset(id); };
+
+        // 1. On charge le SVG de manière IMMÉDIATE et FORCÉE
+        loadComponent(null, "components/remotebig.svg", "#big-remote-wrapper").then(() => {
+            // Dès qu'il a effacé le loader, on met à jour les boutons et les couleurs
+            updateBigRemoteUI();
+        });
+
+        // 2. Boucle de rafraîchissement locale pour animer Shuffle/Repeat
+        setInterval(updateBigRemoteUI, 1000);
+
+        // --- GESTION VISUELLE ---
+        function updateBigRemoteUI() {
+            // Sécurité si app.js n'a pas encore fini de charger les données du Pi
+            if (typeof getSelectedIps !== "function" || !globalData.speakers) return;
+
+            const ips = getSelectedIps();
+            if (ips.length === 0) return;
+            
+            const spk = globalData.speakers[ips[0]];
+            if (!spk) return;
+
+            currentShuffle = spk.shuffleSetting || "SHUFFLE_OFF";
+            currentRepeat = spk.repeatSetting || "REPEAT_OFF";
+
+            const opActive = "1";        
+            const opInactive = "0.3";    
+
+            const logoShuff = document.getElementById('logoShuff');
+            const logoRep = document.getElementById('logoRep');
+            const logoRepOne = document.getElementById('logoRepOne');
+
+            // Mise à jour de la couleur de l'icône Shuffle
+            if (logoShuff) logoShuff.style.opacity = currentShuffle === "SHUFFLE_ON" ? opActive : opInactive;
+
+            // Mise à jour de la couleur de l'icône Repeat
+            if (logoRep && logoRepOne) {
+                if (currentRepeat === "REPEAT_ALL") {
+                    logoRep.style.opacity = opActive;
+                    logoRepOne.style.display = "none";
+                } else if (currentRepeat === "REPEAT_ONE") {
+                    logoRep.style.opacity = opActive;
+                    logoRepOne.style.display = "block"; 
+                    logoRepOne.style.opacity = opActive;
+                } else {
+                    logoRep.style.opacity = opInactive;
+                    logoRepOne.style.display = "none";  
+                }
+            }
+
+            // Mise à jour du texte des 6 presets (sans dépasser du bouton)
+            for (let i = 1; i <= 6; i++) {
+                let presetName = (globalData.presets && globalData.presets[i]) ? globalData.presets[i] : "";
+                const svgTextEl = document.getElementById(`preset-text-${i}`);
+                if (svgTextEl) {
+                    svgTextEl.textContent = presetName.length > 14 ? presetName.substring(0, 13) + "_" : presetName;
+                }
+            }
+        }
+
+        // --- ACTIONS AU CLIC POUR SHUFFLE ET REPEAT ---
+        async function toggleShuffle() {
+            const targetKey = currentShuffle === "SHUFFLE_ON" ? "SHUFFLE_OFF" : "SHUFFLE_ON";
+            if (typeof sendCommand === "function") await sendCommand(targetKey);
+        }
+
+        async function toggleRepeat() {
+            let targetKey = "REPEAT_OFF";
+            if (currentRepeat === "REPEAT_OFF") targetKey = "REPEAT_ALL";
+            else if (currentRepeat === "REPEAT_ALL") targetKey = "REPEAT_ONE";
+            else if (currentRepeat === "REPEAT_ONE") targetKey = "REPEAT_OFF";
+            
+            if (typeof sendCommand === "function") await sendCommand(targetKey);
+        }
+    </script>
+</body>
+</html>

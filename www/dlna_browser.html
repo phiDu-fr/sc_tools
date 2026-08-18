@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+ 	<!-- PWA et Manifest -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#121212">
+
+    <!-- Optimisations spécifiques pour iOS (Apple) -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="SoundCork">
+    <link rel="apple-touch-icon" href="img/icon-192.png">
+
+   <title>Navigateur NAS - SoundTouch</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="stylesheet" href="css/global.css">
+    <style>
+        .dlna-nav-header { 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between;
+            background-color: var(--bg-elevated); 
+            padding: 15px 20px; 
+            border-radius: 8px; 
+            margin-bottom: 20px; 
+        }
+        .dlna-path-container { display: flex; align-items: center; gap: 15px; flex: 1;}
+        .current-path { font-size: 16px; font-weight: bold; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
+        
+        .list-content { display: flex; flex-direction: column; gap: 8px; padding-bottom: 20px; }
+        
+        .dlna-item { 
+            display: flex; 
+            align-items: center; 
+            padding: 10px 15px; 
+            background-color: var(--bg-elevated); 
+            border-radius: 6px; 
+            cursor: pointer; 
+            transition: background-color 0.2s; 
+        }
+        .dlna-item:hover { background-color: var(--bg-highlight); }
+        
+        .item-icon-wrapper { 
+            width: 45px; 
+            height: 45px; 
+            background-color: #333; 
+            border-radius: 4px; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            margin-right: 15px; 
+            font-size: 20px; 
+            flex-shrink: 0;
+            overflow: hidden;
+            color: var(--text-subdued);
+        }
+        .item-img { width: 100%; height: 100%; object-fit: cover; }
+        .item-details { flex: 1; overflow: hidden; }
+        .item-title { font-weight: bold; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 2px;}
+        .item-subtitle { font-size: 12px; color: var(--text-subdued); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
+
+        .status-bar { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background-color: #333; color: white; padding: 12px 24px; border-radius: 500px; font-weight: bold; box-shadow: 0 8px 24px rgba(0,0,0,0.5); z-index: 2000; display: none; transition: opacity 0.3s; }
+        .status-success { background-color: var(--spotify-green); color: black; }
+        .status-error { background-color: #FA243C; color: white;}
+        .status-warning { background-color: #FF9900; color: black;}
+    </style>
+</head>
+<body>
+    <div id="status-bar" class="status-bar">Notification</div>
+
+    <div class="main-container">
+        <div id="mobile-overlay" class="sidebar-overlay" onclick="toggleMobileMenu()"></div>
+        <nav class="sidebar"></nav>
+
+        <main class="main-view">
+            <div class="top-bar">
+                <div style="display: flex; flex: 1; min-width: 0; align-items: center;">
+					<button class="mobile-menu-btn" onclick="toggleMobileMenu(event)">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    
+                    <div class="search-container" style="margin-left: 15px; flex: 1;">
+                        <input type="text" id="dlna-search-input" class="search-input" placeholder="Rechercher sur le NAS...">
+                        <select id="dlna-search-type" class="search-select">
+                            <option value="all">Tous</option>
+                            <option value="title">Titre</option>
+                            <option value="artist">Artiste</option>
+                            <option value="album">Album</option>
+                        </select>
+                        <button class="btn-search" onclick="performSearch()">Rechercher</button>
+						<h2>Serveur DLNA</h2>
+                    </div>
+                </div>
+                
+                <div class="remote-wrapper" id="remote-wrapper"></div>
+            </div>
+
+            <div class="dlna-nav-header">
+                <div class="dlna-path-container">
+                    <button class="btn-action" id="backBtn" onclick="goBack()" style="width: auto; display: none; padding: 6px 15px;">
+                        <i class="fas fa-arrow-left"></i> Retour
+                    </button>
+                    <h3 id="current-path" class="current-path">Recherche des serveurs...</h3>
+                </div>
+            </div>
+
+            <div class="list-content" id="content-list">
+                <div style="text-align: center; color: var(--text-subdued); margin-top: 40px;">
+                    <div class="loader" style="margin: 0 auto 15px auto;"></div>
+                    Recherche sur le réseau...
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <footer class="player-bar"></footer>
+
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+	<script src="js/app.js"></script>
+    <script>
+        let navigationHistory = [];
+        let currentAccount = null; 
+
+        function showNotification(msg, type = "warning") {
+            const statusBar = document.getElementById('status-bar');
+            statusBar.innerText = msg;
+            statusBar.className = `status-bar status-${type}`;
+            statusBar.style.display = 'block';
+            setTimeout(() => { statusBar.style.display = 'none'; }, 3000);
+        }
+
+        function escapeXml(unsafe) {
+            if (!unsafe) return "";
+            return unsafe.replace(/[<>&'"]/g, function (c) {
+                switch (c) {
+                    case '<': return '&lt;'; case '>': return '&gt;';
+                    case '&': return '&amp;'; case '\'': return '&apos;';
+                    case '"': return '&quot;';
+                }
+            });
+        }
+
+        async function loadServers() {
+            navigationHistory = [];
+            currentAccount = null;
+            document.getElementById('backBtn').style.display = 'none';
+            document.getElementById('current-path').innerText = 'Serveurs Réseau';
+            
+            const ips = getSelectedIps();
+            if (ips.length === 0) {
+                document.getElementById('content-list').innerHTML = '<p style="text-align:center; color:#FA243C; margin-top:40px;">Veuillez sélectionner au moins une enceinte.</p>';
+                return;
+            }
+
+            try {
+                const res = await fetch(`/api/upnp/servers?ip=${ips[0]}`);
+                const servers = await res.json();
+
+                if (servers.error) throw new Error("Erreur Backend: " + servers.error);
+
+                if (!Array.isArray(servers) || servers.length === 0) {
+                    document.getElementById('content-list').innerHTML = '<p style="text-align:center; color:var(--text-subdued); margin-top:40px;">Aucun serveur DLNA détecté.</p>';
+                    return;
+                }
+
+                let html = '';
+                servers.forEach(srv => {
+                    html += `
+                        <div class="dlna-item" onclick="openFolder('${srv.location}', '${srv.account}', '0', '${escapeXml(srv.name)}')">
+                            <div class="item-icon-wrapper"><i class="fas fa-server" style="color: #1DB954;"></i></div>
+                            <div class="item-details">
+                                <div class="item-title">${srv.name}</div>
+                                <div class="item-subtitle">Serveur DLNA/UPnP</div>
+                            </div>
+                            <i class="fas fa-chevron-right" style="color: var(--text-subdued);"></i>
+                        </div>
+                    `;
+                });
+                
+                document.getElementById('content-list').innerHTML = html;
+            } catch (e) {
+                console.error(e);
+                document.getElementById('content-list').innerHTML = '<p style="text-align:center; color:#FA243C; margin-top:40px;">Erreur de communication.</p>';
+            }
+        }
+
+        async function openFolder(location, account, nodeId, title, isBack = false) {
+            currentAccount = account;
+
+            if (!isBack) {
+                navigationHistory.push({ location, account, nodeId, title });
+            }
+
+            document.getElementById('backBtn').style.display = 'block';
+            document.getElementById('current-path').innerText = title;
+            document.getElementById('content-list').innerHTML = '<div style="text-align: center; color: var(--text-subdued); margin-top: 40px;"><div class="loader" style="margin: 0 auto 15px auto;"></div>Chargement du dossier...</div>';
+
+            try {
+                const res = await fetch('/api/upnp/navigate', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ location: location, node_id: nodeId })
+                });
+                
+                const data = await res.json();
+                
+                if (data.error) throw new Error(data.error);
+                if (!data.items || data.items.length === 0) {
+                    document.getElementById('content-list').innerHTML = '<p style="text-align:center; color:var(--text-subdued); margin-top:40px;">Dossier vide.</p>';
+                    return;
+                }
+
+                let html = '';
+                let trackIndex = 0; 
+
+				data.items.forEach(item => {
+                    const cleanName = item.name.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                    
+                    if (item.is_dir) {
+                        html += `
+                            <div class="dlna-item" onclick="openFolder('${location}', '${account}', '${item.node_id}', '${cleanName}')">
+                                <div class="item-icon-wrapper" style="background-color: transparent;"><i class="fas fa-folder" style="color: #FFC107; font-size: 28px;"></i></div>
+                                <div class="item-details">
+                                    <div class="item-title">${item.name}</div>
+                                </div>
+                                <i class="fas fa-chevron-right" style="color: var(--text-subdued);"></i>
+                            </div>
+                        `;
+                    } else {
+                        let currentIndex = trackIndex;
+                        const coverHtml = item.cover 
+                            ? `<img src="${item.cover}" class="item-img" onerror="this.style.display='none'">` 
+                            : `<i class="fas fa-music"></i>`;
+
+                        html += `
+                            <div class="dlna-item" onclick="playNativePurist('${item.node_id}', '${nodeId}', ${currentIndex}, '${cleanName}')">
+                                <div class="item-icon-wrapper">${coverHtml}</div>
+                                <div class="item-details">
+                                    <div class="item-title">${item.name}</div>
+                                    <div class="item-subtitle">${item.artist || 'Artiste inconnu'} ${item.album ? '• ' + item.album : ''}</div>
+                                </div>
+                                <button class="btn-card btn-card-play" style="padding: 5px 15px; border-radius: 500px; font-weight: bold; background: white; color: black; border: none; cursor: pointer; margin-left: 10px;">▶ Lire</button>
+                            </div>
+                        `;
+                        trackIndex++;
+                    }
+                });
+                
+                document.getElementById('content-list').innerHTML = html;
+            } catch (e) {
+                console.error(e);
+                document.getElementById('content-list').innerHTML = '<p style="text-align:center; color:#FA243C; margin-top:40px;">Erreur avec le NAS.</p>';
+            }
+        }
+
+        function goBack() {
+            if (navigationHistory.length > 1) {
+                navigationHistory.pop();
+                const parent = navigationHistory[navigationHistory.length - 1]; 
+                openFolder(parent.location, parent.account, parent.nodeId, parent.title, true);
+            } else {
+                loadServers();
+            }
+        }
+
+        async function playNativePurist(nodeId, folderId, offsetIndex, trackTitle) {
+            const ips = getSelectedIps();
+            if (ips.length === 0) return showNotification("Sélectionnez au moins une enceinte.", "error");
+
+            showNotification("⏳ Lancement natif sur l'enceinte...", "warning");
+            
+            const currentFolder = navigationHistory[navigationHistory.length - 1];
+
+            try {
+                const res = await fetch('/api/upnp/play', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ 
+                        ip: ips[0], 
+                        node_id: nodeId,
+                        folder_id: folderId,
+                        offset: offsetIndex,
+                        account: currentAccount,
+                        track_title: escapeXml(trackTitle),
+                        folder_title: escapeXml(currentFolder.title)
+                    })
+                });
+                
+                if (res.ok) {
+                    showNotification("✅ Lecture native fluide lancée !", "success");
+                    setTimeout(fetchState, 1500); 
+                } else {
+                    showNotification("❌ Erreur de l'enceinte", "error");
+                }
+            } catch (e) {
+                showNotification("❌ Erreur réseau", "error");
+            }
+        }
+
+        async function performSearch() {
+            const query = document.getElementById('dlna-search-input').value.trim();
+            const type = document.getElementById('dlna-search-type').value;
+            
+            if (!query) return showNotification("Veuillez entrer un terme de recherche.", "warning");
+            if (!currentAccount) return showNotification("Veuillez d'abord sélectionner un serveur ou un dossier.", "error");
+
+            if (navigationHistory.length === 0) return showNotification("Naviguez d'abord dans un serveur.", "warning");
+            const serverLocation = navigationHistory[0].location;
+
+            document.getElementById('current-path').innerText = `Recherche : "${query}"`;
+            document.getElementById('content-list').innerHTML = '<div style="text-align: center; color: var(--text-subdued); margin-top: 40px;"><div class="loader" style="margin: 0 auto 15px auto;"></div>Recherche en cours...</div>';
+            document.getElementById('backBtn').style.display = 'block';
+
+            try {
+                const res = await fetch('/api/upnp/search', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ location: serverLocation, query: query, type: type })
+                });
+                
+                const data = await res.json();
+                
+                if (data.error) throw new Error(data.error);
+                if (!data.items || data.items.length === 0) {
+                    document.getElementById('content-list').innerHTML = '<p style="text-align:center; color:var(--text-subdued); margin-top:40px;">Aucun résultat trouvé.</p>';
+                    return;
+                }
+
+                let html = '';
+                data.items.forEach(item => {
+                    const cleanName = item.name.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                    const parentId = item.parent_id || '0'; 
+                    
+                    const coverHtml = item.cover 
+                        ? `<img src="${item.cover}" class="item-img" onerror="this.style.display='none'">` 
+                        : `<i class="fas fa-search" style="color: var(--spotify-green);"></i>`;
+                    
+                    html += `
+                        <div class="dlna-item" onclick="playNativePurist('${item.node_id}', '${parentId}', 0, '${cleanName}')">
+                            <div class="item-icon-wrapper">${coverHtml}</div>
+                            <div class="item-details">
+                                <div class="item-title">${item.name}</div>
+                                <div class="item-subtitle">${item.artist || 'Artiste inconnu'} ${item.album ? '• ' + item.album : ''}</div>
+                            </div>
+                            <button class="btn-card btn-card-play" style="padding: 5px 15px; border-radius: 500px; font-weight: bold; background: white; color: black; border: none; cursor: pointer; margin-left: 10px;">▶ Lire</button>
+                        </div>
+                    `;
+                });
+                
+                document.getElementById('content-list').innerHTML = html;
+            } catch (e) {
+                console.error(e);
+                document.getElementById('content-list').innerHTML = '<p style="text-align:center; color:#FA243C; margin-top:40px;">Erreur. Le NAS ne supporte peut-être pas la fonction de recherche UPnP.</p>';
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            const initCheck = setInterval(() => {
+                if (typeof hasInitializedSpeakers !== 'undefined' && hasInitializedSpeakers) {
+                    clearInterval(initCheck);
+                    loadServers();
+                }
+            }, 100);
+
+            document.addEventListener('change', (e) => {
+                if (e.target && e.target.classList.contains('speaker-checkbox')) {
+                    if (navigationHistory.length === 0) loadServers();
+                }
+            });
+
+            const searchInput = document.getElementById('dlna-search-input');
+            if(searchInput) {
+                searchInput.addEventListener('keypress', function (e) {
+                    if (e.key === 'Enter') performSearch();
+                });
+            }
+        });
+    </script>
+</body>
+</html>

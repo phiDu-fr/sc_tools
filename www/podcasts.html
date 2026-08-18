@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<!-- PWA et Manifest -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#121212">
+
+    <!-- Optimisations spécifiques pour iOS (Apple) -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="SoundCork">
+    <link rel="apple-touch-icon" href="img/icon-192.png">
+
+    <title>🎙 Podcasts - SoundTouch</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="stylesheet" href="css/global.css">
+    <style>
+        .folder-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 40px; }
+        .folder-item { background-color: var(--bg-elevated); border-radius: 8px; overflow: hidden; }
+        .folder-header { padding: 16px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-weight: bold; transition: background-color 0.2s;}
+        .folder-header:hover { background-color: var(--bg-highlight); }
+        .folder-content { display: none; padding: 0 16px 16px 16px; }
+        .folder-content.open { display: block; }
+        .track-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #282828;}
+        .track-item:last-child { border-bottom: none; }
+        
+        .status-bar { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background-color: #333; color: white; padding: 12px 24px; border-radius: 500px; font-weight: bold; box-shadow: 0 8px 24px rgba(0,0,0,0.5); z-index: 2000; display: none; transition: opacity 0.3s; }
+        .status-success { background-color: var(--spotify-green); color: black; }
+        .status-error { background-color: #FA243C; color: white; }
+        .status-warning { background-color: #FF9900; color: black;}
+
+		.preset-label {
+			font-size: 2px;
+			font-family: Arial, sans-serif;
+		}
+    </style>
+</head>
+<body>
+    <div id="status-bar" class="status-bar">Notification</div>
+
+    <div class="main-container">
+        <div id="mobile-overlay" class="sidebar-overlay" onclick="toggleMobileMenu()"></div>
+        <nav class="sidebar"></nav>
+
+        <main class="main-view">
+            <div class="top-bar">
+			<!-- avant -->
+			<!-- <div style="display: flex; width: 100%; align-items: center;"> -->
+			<!-- après -->
+			<div style="display: flex; flex: 1; min-width: 0; align-items: center;">                  
+				<button class="mobile-menu-btn" onclick="toggleMobileMenu(event)">
+					<i class="fas fa-bars"></i>
+					</button>
+                    <div class="search-container">
+                        <input type="text" id="search-podcast-q" class="search-input" placeholder="Chercher un podcast en ligne...">
+                        <select id="country" class="search-select">
+                            <option value="fr" selected>🇫🇷 FR</option>
+                            <option value="be">🇧🇪 BE</option>
+                            <option value="ch">🇨🇭 CH</option>
+                            <option value="ca">🇨🇦 CA</option>
+                        </select>
+                        <button class="btn-search" onclick="searchPodcasts()">Rechercher</button>
+                    </div>
+                </div>
+                
+                <!-- <div class="sources-wrapper" id="sources-wrapper" style="max-width: 150px; width: 100%; margin: 0 15px;"></div> -->
+				<div class="remote-wrapper" id="remote-wrapper"></div>
+            </div>
+
+			<button class="btn-action btn-action-primary" style="margin-bottom: 30px; font-size: 16px; padding: 12px; background-color: rgba(29, 185, 84, 0.1);" onclick="toggleRFDownloaderPanel()">
+				<i class="fas fa-cloud-download-alt"></i> <span id="rf-btn-text">Ouvrir le téléchargeur Radio France (Intégré)</span>
+			</button>
+
+			<div id="rf-downloader-panel" style="display: none; background-color: var(--bg-elevated); padding: 20px; border-radius: 8px; margin-bottom: 30px; border: 1px solid #282828;">
+				<h3 style="margin-top: 0; margin-bottom: 15px; color: var(--text-base); font-size: 16px;"><i class="fas fa-search" style="color: var(--spotify-green);"></i> Rechercher une émission à télécharger</h3>
+				
+				<div class="search-container" style="margin-bottom: 20px; width: 100%; max-width: 100%;">
+					<input type="text" id="search-rf-q" class="search-input" placeholder="Ex: Affaires sensibles, Hondelatte raconte...">
+					<select id="rf-station-select" class="search-select">
+						<option value="">Toutes les radios</option>
+						<option value="FRANCEINTER">France Inter</option>
+						<option value="FRANCECULTURE">France Culture</option>
+						<option value="FRANCEINFO">franceinfo</option>
+						<option value="FRANCEMUSIQUE">France Musique</option>
+						<option value="FRANCEBLEU">France Bleu</option>
+						<option value="FIP">FIP</option>
+						<option value="MOUV">Mouv'</option>
+					</select>
+					<button class="btn-search" onclick="searchRFShows()">Chercher</button>
+				</div>
+				
+				<div id="rf-search-results" class="grid"></div>
+			</div>
+
+            <div id="search-section" class="hidden">
+                <h2 class="section-title">Résultats iTunes</h2>
+                <div class="grid" id="podcast-results"></div>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 class="section-title" style="margin: 0;">📚 Bibliothèque Radio France</h2>
+                <button class="btn-action btn-action-primary" style="width: auto; padding: 5px 15px;" onclick="loadLocalRFDownloads()">
+                    <i class="fas fa-sync-alt"></i> Actualiser
+                </button>
+            </div>
+            
+            <div class="folder-list" id="local-rf-list">
+                <p style="color:var(--text-subdued)">Chargement de la bibliothèque locale...</p>
+            </div>
+        </main>
+    </div>
+    
+    <footer class="player-bar"></footer>
+
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+	<script src="js/app.js"></script>
+    <script>
+        function showNotification(msg, type = "warning") {
+            const statusBar = document.getElementById('status-bar');
+            statusBar.innerText = msg;
+            statusBar.className = `status-bar status-${type}`;
+            statusBar.style.display = 'block';
+            setTimeout(() => { statusBar.style.display = 'none'; }, 4000);
+        }
+
+        document.getElementById('search-podcast-q').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') searchPodcasts();
+        });
+
+        async function searchPodcasts() {
+            const query = document.getElementById('search-podcast-q').value.trim();
+            const country = document.getElementById('country').value;
+            const resDiv = document.getElementById('podcast-results');
+            const sectionDiv = document.getElementById('search-section');
+
+            if (query.length < 2) return;
+
+            sectionDiv.classList.remove('hidden');
+            resDiv.innerHTML = '<p style="color:var(--text-subdued)">Recherche en cours...</p>';
+
+            try {
+                const response = await fetch(`/api/podcasts/search?q=${encodeURIComponent(query)}&country=${country}`);
+                const episodes = await response.json();
+                
+                if (!episodes || episodes.length === 0) {
+                    resDiv.innerHTML = '<p style="color:var(--text-subdued)">Aucun épisode trouvé.</p>';
+                    return;
+                }
+
+                resDiv.innerHTML = episodes.map(ep => {
+                    const cleanTitle = ep.title.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                    return `
+                        <div class="card">
+                            <div class="card-icon" style="background-image: url('${ep.cover || ''}');" onclick="playPodcast('${ep.url}', '${cleanTitle}')">
+                                ${ep.cover ? '' : '<i class="fas fa-podcast"></i>'}
+                            </div>
+                            <div class="card-title" title="${ep.title}">${ep.title}</div>
+                            <div class="card-subtitle">${ep.emission} • ${ep.date}</div>
+                            <div class="card-actions">
+                                <button class="btn-card btn-card-play" style="width:100%" onclick="playPodcast('${ep.url}', '${cleanTitle}')">▶ Lire l'épisode</button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } catch (error) {
+                resDiv.innerHTML = '<p style="color:#FA243C">Erreur lors de la recherche.</p>';
+            }
+        }
+
+        async function playPodcast(audioUrl, title) {
+            const ips = getSelectedIps(); 
+            if (ips.length === 0) return showNotification("Sélectionnez au moins une enceinte active.", "error");
+            
+            showNotification("⏳ Chargement du flux en cours...", "warning");
+            try {
+                const response = await fetch('/api/play_podcast', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ url: audioUrl, name: title, ips: ips })
+                });
+                const data = await response.json();
+                if (data.status === 'ok') {
+                    showNotification("✅ Lecture lancée !", "success");
+                    setTimeout(fetchState, 1500); 
+                } else {
+                    showNotification("❌ Erreur : " + data.message, "error");
+                }
+            } catch (error) {
+                showNotification("❌ Erreur de communication.", "error");
+            }
+        }
+
+        function toggleFolder(idx) {
+            document.getElementById(`folder-content-${idx}`).classList.toggle('open');
+        }
+
+        async function loadLocalRFDownloads() {
+            const container = document.getElementById('local-rf-list');
+            container.innerHTML = '<p style="color:var(--text-subdued)">Actualisation...</p>';
+            try {
+                const res = await fetch('/api/local_rf_downloads');
+                const data = await res.json();
+                container.innerHTML = '';
+                
+                const showNames = Object.keys(data);
+                if (showNames.length === 0) {
+                    container.innerHTML = '<p style="color:var(--text-subdued)">Aucun podcast téléchargé trouvé.</p>';
+                    return;
+                }
+                
+                showNames.forEach((name, idx) => {
+                    const files = data[name];
+                    const trackListHtml = files.map(f => {
+                        const fullPath = `${name}/${f}`;
+                        const cleanTitle = f.replace('.mp3', '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                        const cleanPath = fullPath.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                        return `
+							<div class="track-item">
+								<span style="font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 15px;">
+									<i class="fas fa-music" style="color:var(--text-subdued); margin-right: 10px;"></i> ${f}
+								</span>
+								<div style="display: flex; gap: 8px;">
+									<button class="btn-card btn-card-play" style="padding: 5px 15px; width: auto;" onclick="playLocalRF('${cleanPath}', '${cleanTitle}')">▶ Lire</button>
+									<button class="btn-card" style="padding: 5px 15px; width: auto; background-color: #FA243C; color: white;" onclick="deleteLocalRF('${cleanPath}')" title="Supprimer l'épisode">
+										<i class="fas fa-trash"></i>
+									</button>
+								</div>
+							</div>
+						`;
+                    }).join('');
+
+                    container.innerHTML += `
+                        <div class="folder-item">
+                            <div class="folder-header" onclick="toggleFolder(${idx})">
+                                <div><i class="fas fa-folder" style="color: #FFC107; margin-right: 10px;"></i> ${name} <span style="background:var(--spotify-green); color:black; padding:2px 8px; border-radius:12px; font-size:12px; margin-left:10px;">${files.length}</span></div>
+                                <i class="fas fa-chevron-down"></i>
+                            </div>
+                            <div class="folder-content" id="folder-content-${idx}">
+                                ${trackListHtml}
+                            </div>
+                        </div>
+                    `;
+                });
+            } catch (error) {
+                container.innerHTML = '<p style="color:#FA243C">Impossible de charger la bibliothèque locale.</p>';
+            }
+        }
+
+        async function playLocalRF(path, title) {
+            const ips = getSelectedIps();
+            if (ips.length === 0) return showNotification("Sélectionnez au moins une enceinte active.", "error");
+            
+            showNotification("⏳ Envoi du fichier local...", "warning");
+            try {
+                const response = await fetch('/api/play_local_rf', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ path: path, name: title, ips: ips })
+                });
+                const data = await response.json();
+                if (data.status === 'ok') {
+                    showNotification("✅ Lecture instantanée lancée !", "success");
+                    setTimeout(fetchState, 1500);
+                } else {
+                    showNotification("❌ Erreur : " + data.message, "error");
+                }
+            } catch (error) {
+                showNotification("❌ Erreur de communication.", "error");
+            }
+        }
+		
+		async function deleteLocalRF(path) {
+			if (!confirm("Voulez-vous vraiment supprimer cet épisode ?")) return;
+			
+			showNotification("🗑 Suppression en cours...", "warning");
+			try {
+				const response = await fetch('/api/delete_local_rf', {
+					method: 'POST',
+					headers: {'Content-Type': 'application/json'},
+					body: JSON.stringify({ path: path })
+				});
+				const data = await response.json();
+				if (data.status === 'ok') {
+					showNotification("✅ Fichier supprimé avec succès !", "success");
+					loadLocalRFDownloads();
+				} else {
+					showNotification("❌ Erreur : " + data.message, "error");
+				}
+			} catch (error) {
+				showNotification("❌ Erreur de communication avec le serveur.", "error");
+			}
+		}
+		
+		function toggleRFDownloaderPanel() {
+			const panel = document.getElementById('rf-downloader-panel');
+			const btnText = document.getElementById('rf-btn-text');
+			if (panel.style.display === 'none') {
+				panel.style.display = 'block';
+				btnText.innerText = "Fermer le téléchargeur Radio France";
+			} else {
+				panel.style.display = 'none';
+				btnText.innerText = "Ouvrir le téléchargeur Radio France (Intégré)";
+			}
+		}
+
+		document.getElementById('search-rf-q').addEventListener('keypress', function (e) {
+			if (e.key === 'Enter') searchRFShows();
+		});
+
+		async function searchRFShows() {
+			const query = document.getElementById('search-rf-q').value.trim();
+			const station = document.getElementById('rf-station-select').value;
+			const resDiv = document.getElementById('rf-search-results');
+			
+			if (!query) return;
+			
+			resDiv.innerHTML = '<p style="color:var(--text-subdued)">Recherche en cours sur Radio France...</p>';
+			
+			let url = `/api/rf/shows?query=${encodeURIComponent(query)}`;
+			if (station) url += `&station=${encodeURIComponent(station)}`;
+			
+			try {
+				const response = await fetch(url);
+				const shows = await response.json();
+				
+				if (!shows || shows.length === 0 || shows.error) {
+					resDiv.innerHTML = '<p style="color:var(--text-subdued)">Aucune émission trouvée. Vérifiez votre clé API.</p>';
+					return;
+				}
+				
+				resDiv.innerHTML = shows.map((show, idx) => {
+					const b64Url = btoa(unescape(encodeURIComponent(show.url)));
+					return `
+						<div class="card">
+							<div class="card-icon" style="display: flex; align-items: center; justify-content: center; background: #282828;">
+								<i class="fas fa-broadcast-tower" style="font-size: 28px; color: var(--text-subdued);"></i>
+							</div>
+							<div class="card-title" title="${show.title}">${show.title}</div>
+							<div class="card-subtitle">${show.station}</div>
+							<div class="card-actions" style="flex-direction: column; gap: 8px; width: 100%; padding-top: 10px;">
+								<select id="rf-count-${idx}" style="background: #181818; color: var(--text-base); border: 1px solid #282828; padding: 6px; border-radius: 4px; width: 100%; font-size: 12px;">
+									<option value="1">1 seul (dernier)</option>
+									<option value="3">3 derniers</option>
+									<option value="5">5 derniers</option>
+									<option value="10">10 derniers</option>
+								</select>
+								<button class="btn-card btn-card-play" style="width: 100%; margin: 0; padding: 6px; font-size: 12px; border-radius: 4px; background-color: rgba(29, 185, 84, 0.2);" onclick="downloadRFShow('${b64Url}', 'rf-count-${idx}')">
+									<i class="fas fa-download"></i> Télécharger
+								</button>
+							</div>
+						</div>
+					`;
+				}).join('');
+			} catch (e) {
+				resDiv.innerHTML = '<p style="color:#FA243C">Erreur lors de la communication avec le serveur.</p>';
+			}
+		}
+
+		async function downloadRFShow(b64Url, selectId) {
+			const url = decodeURIComponent(escape(atob(b64Url)));
+			const count = document.getElementById(selectId).value;
+			
+			showNotification("📥 Planification du téléchargement...", "warning");
+			
+			try {
+				const response = await fetch('/api/rf/download', {
+					method: 'POST',
+					headers: {'Content-Type': 'application/json'},
+					body: JSON.stringify({ show_url: url, latest_n: parseInt(count) })
+				});
+				const data = await response.json();
+				
+				if (data.message) {
+					showNotification("✅ " + data.message, "success");
+					setTimeout(loadLocalRFDownloads, 4000);
+				} else {
+					showNotification("❌ Erreur : " + (data.error || "Inconnue"), "error");
+				}
+			} catch (error) {
+				showNotification("❌ Erreur de réseau lors du lancement.", "error");
+			}
+		}
+
+        loadLocalRFDownloads();
+    </script>
+</body>
+</html>

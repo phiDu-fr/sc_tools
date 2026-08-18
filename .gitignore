@@ -1,0 +1,50 @@
+# Fichiers de configuration locale et bases de données
+*.db
+*.sqlite3
+
+# Variables d'environnement et secrets
+.env
+.env.local
+secret.key
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+env/
+.venv/
+
+# Logs
+*.log
+logs/
+
+# Fichiers système
+.DS_Store
+Thumbs.db
+
+# Docker (si tu as des builds locaux non désirés sur git)
+.docker-volume/
+
+# Médias et caches
+*.mp3
+Music/
+dlna_cache/
+Podcasts/
+
+# Fichiers et dossiers spécifiques sc_tools
+update/
+radiofrance_downloader/radiofrance-config/
+app/virtual_soundtouch.py
+data/*.json
+docs/soundcork/
+docs/soundcork-stockholm-app/
+docs/*.txt
+tools/install/
+tools/*.xml
+
+# Frontend / Interface web
+www/player.html
+www/js/player.js
+www/images/
+www/img/

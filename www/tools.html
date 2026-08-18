@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Outils d'Administration</title>
+    <style>
+        body { font-family: sans-serif; margin: 20px; background: #1e1e1e; color: #fff; }
+        .card { background: #2d2d2d; padding: 15px; margin-bottom: 15px; border-radius: 8px; }
+        input, select, button { padding: 8px; margin-top: 5px; }
+        button { background: #007bff; color: white; border: none; cursor: pointer; border-radius: 4px; }
+        iframe { width: 100%; height: 500px; border: 2px solid #555; border-radius: 8px; margin-top: 20px; background: #000; }
+    </style>
+</head>
+<body>
+    <nav style="padding: 10px; background-color: #f4f4f4; border-bottom: 1px solid #ccc; margin-bottom: 20px;">
+    
+        <a href="/" style="margin-right: 15px; color: #333; font-weight: bold; text-decoration: none;">Retour</a>
+        
+        <a id="lien-soundcork" target="_blank" href="#" style="margin-right: 15px; color: #333; text-decoration: none;">SoundCork</a>
+        
+        <a id="lien-stockholm" target="_blank" href="#" style="margin-right: 15px; color: #333; text-decoration: none;">Stockholm</a>
+
+        <a id="lien-urlMiniDlna" target="_blank" href="#" style="margin-right: 15px; color: #333; text-decoration: none;">MiniDLNA</a>
+
+        <a href="http://phd.dsmynas.net/sc_tools" target="_blank" style="margin-right: 15px; color: #333; text-decoration: none;">Procédure d'installation</a>
+
+    </nav>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            // Récupère l'adresse (IP ou domaine) du serveur actuel
+            var serveurCourant = window.location.hostname;
+            
+            // Construit l'URL avec les ports respectifs
+            var urlSoundCork = window.location.protocol + "//" + serveurCourant + ":8000/admin/";
+            var urlStockholm = window.location.protocol + "//" + serveurCourant + ":8088/";
+            var urlMiniDlna = window.location.protocol + "//" + serveurCourant + ":8282/";
+            
+            // Applique l'URL aux liens
+            document.getElementById("lien-soundcork").href = urlSoundCork;
+            document.getElementById("lien-stockholm").href = urlStockholm;
+            document.getElementById("lien-urlMiniDlna").href = urlMiniDlna;
+        });
+    </script>
+
+    <h1>🎛️ Outils d'Administration</h1>
+    
+    <div style="display: flex; gap: 20px;">
+        <div style="flex: 1;">
+            {% for section, data in config.items() %}
+            <div class="card">
+                <h3>{{ data.titre }}</h3>
+                <form action="/run_tool" method="POST" target="terminal_frame">
+                    <input type="hidden" name="section" value="{{ section }}">
+                    
+                    {% if 'arg1_label' in data %}
+                        <label>{{ data.arg1_label }}</label><br>
+                        {% if data.arg1_type == 'select' %}
+                            <select name="arg1" required>
+                                {% for opt in data.arg1_options.split(',') %}
+                                    <option value="{{ opt }}">{{ opt }}</option>
+                                {% endfor %}
+                            </select>
+                        {% else %}
+                            <input type="text" name="arg1" required>
+                        {% endif %}
+                        <br><br>
+                    {% endif %}
+                    
+                    {% if 'arg2_label' in data %}
+                        <label>{{ data.arg2_label }}</label><br>
+                        {% if data.arg2_type == 'select' %}
+                            <select name="arg2" required>
+                                {% for opt in data.arg2_options.split(',') %}
+                                    <option value="{{ opt }}">{{ opt }}</option>
+                                {% endfor %}
+                            </select>
+                        {% else %}
+                            <input type="text" name="arg2" required>
+                        {% endif %}
+                        <br><br>
+                    {% endif %}
+                    
+                    {% if 'arg3_label' in data %}
+                        <label>{{ data.arg3_label }}</label><br>
+                        {% if data.arg3_type == 'select' %}
+                            <select name="arg3" required>
+                                {% for opt in data.arg3_options.split(',') %}
+                                    <option value="{{ opt }}">{{ opt }}</option>
+                                {% endfor %}
+                            </select>
+                        {% else %}
+                            <input type="text" name="arg3" required>
+                        {% endif %}
+                        <br><br>
+                    {% endif %}
+                    
+                    <button type="submit">Lancer le script</button>
+                </form>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <div style="flex: 1;">
+            <h3>Console Interactive</h3>
+            <iframe name="terminal_frame" src="about:blank"></iframe>
+        </div>
+    </div>
+</body>
+</html>

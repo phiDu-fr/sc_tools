@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Démarrage...</title>
+    <script>
+        // Fonction asynchrone pour lire la configuration et rediriger
+        async function initApp() {
+            try {
+                // Tente de récupérer le fichier config.json
+                const response = await fetch('config.json');
+                
+                if (!response.ok) {
+                    throw new Error("Fichier de configuration introuvable.");
+                }
+
+                const config = await response.json();
+
+                // Récupère la page cible, ou utilise 'radios.html' par sécurité
+                const targetPage = config.defaultPage || 'radios.html';
+
+                // Redirige vers la page choisie
+                window.location.replace(targetPage);
+
+            } catch (error) {
+                console.error("Erreur :", error);
+                // En cas de problème de chargement, on lance les radios par défaut
+                window.location.replace('radios.html');
+            }
+        }
+
+        // Lancer la fonction dès que la page s'ouvre
+        window.onload = initApp;
+    </script>
+    <style>
+        /* Un petit style basique pour patienter pendant la milliseconde de chargement */
+        body {
+            background-color: #121212;
+            color: #ffffff;
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+    <p>Chargement de l'interface...</p>
+</body>
+</html>

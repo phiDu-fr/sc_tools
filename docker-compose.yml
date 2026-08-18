@@ -1,0 +1,53 @@
+services:
+  # --- APPLICATION PRINCIPALE UNIFIÉE (SOUNDCORK + RADIO FRANCE) ---
+  sc_app:
+    container_name: sc_app
+    build: . 
+    network_mode: host
+    privileged: true
+    env_file:
+      - .env
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    volumes:
+      - ./app:/app
+      - ./www:/app/www
+      - ./data:/app/tools_data
+      - ./Podcasts:/app/rf_podcasts
+      - /home/pi/sc_tools/Music:/media:ro
+      - /home/pi/soundcork/data:/data
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /home/pi/sc_tools/tools:/home/pi/sc_tools/tools
+      - /var/run/dbus:/var/run/dbus
+      - /var/run/avahi-daemon/socket:/var/run/avahi-daemon/socket
+      - /etc/localtime:/etc/localtime:ro     
+    environment:
+      - RF_TOKEN=${RF_TOKEN}
+      - FLASK_ENV=production
+      - SOUNDCORK_PORT=8000
+    restart: always
+
+  # --- MINI-DLNA LOCAL ---
+  local_dlna:
+    image: vladgh/minidlna
+    container_name: local_dlna
+    network_mode: host 
+    environment:
+      - MINIDLNA_MEDIA_DIR=A,/media
+      - MINIDLNA_PORT=8282
+      - MINIDLNA_FRIENDLY_NAME=SoundCork
+      - MINIDLNA_INOTIFY=no
+      - MINIDLNA_NETWORK_INTERFACE=${DLNA_INTERFACE:-eth0}
+      - MINIDLNA_ALBUM_ART_NAMES=Cover.jpg/cover.jpg
+      - MINIDLNA_NOTIFY_INTERVAL=86400
+      # Force l'affichage du dossier Musique par défaut
+      - MINIDLNA_ROOT_CONTAINER=M
+    volumes:
+      # Lecture dynamique du chemin de la musique
+      - ${MEDIA_PATH:-./Music}:/media:ro
+      - ./playlists:/playlists:ro
+      - ./dlna_cache:/minidlna 
+    restart: unless-stopped

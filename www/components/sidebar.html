@@ -1,0 +1,73 @@
+<!-- www/components/sidebar.html -->
+<div class="brand" onclick="window.location.href='index.html'">
+    <i id="dynamic-logo" class="fab fa-spotify" style="color: var(--spotify-green);"></i>
+    <span>SoundTouch Custom</span>
+</div>
+
+<div class="nav-section">
+    <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+        <h3 onclick="forcePollAll(event)" style="cursor: pointer; margin: 0;" title="Forcer la reconnexion des enceintes">
+            Enceintes <i class="fas fa-sync-alt" style="font-size: 0.8em; margin-left: 5px; color: var(--text-subdued);"></i>
+        </h3>
+        <!-- Bouton pour quitter la sélection multiple -->
+        <button id="exit-multi-select" class="btn-exit-multi" style="display: none;" onclick="exitMultiSelectMode()">
+            <i class="fas fa-check"></i> Terminé
+        </button>
+    </div>
+    
+    <div id="speakers-list" class="speakers-list">
+        <!-- Les enceintes seront injectées ici par app.js -->
+    </div>
+    
+    <div class="action-buttons">
+        <button class="btn-action btn-action-primary" onclick="createZone()">
+            <i class="fas fa-link"></i> Grouper
+        </button>
+        <!-- NOUVEAU : BOUTONS SPÉCIFIQUES ST-10 STEREO -->
+	<!--- désactivés pour alléger l'écran, peu utilisé
+		<button class="btn-action" style="border-color: #FFC107; color: #FFC107; margin-top: 5px;" onclick="createStereoPair()">
+			<i class="fas fa-headphones"></i> Créer Paire Stéréo (ST-10)
+		</button>
+		<button class="btn-action" style="border-color: #FA243C; color: #FA243C; margin-top: 5px;" onclick="removeStereoPair()">
+			<i class="fas fa-unlink"></i> Séparer Stéréo (ST-10)
+		</button>
+	-->
+    </div>
+</div>
+
+<div class="nav-section">
+	<a href="https://open.spotify.com/intl-fr/" target="_blank" class="nav-item id-nav-spotify">
+<!--
+	<a href="https://open.spotify.com/intl-fr/" target="_blank" class="id-nav-spotify">
+-->
+		   <i class="fab fa-spotify"></i> Spotify
+	</a>
+    <h3>Applications</h3>
+    <a href="radios.html" class="nav-item id-nav-index">
+   <i class="fas fa-broadcast-tower"></i> Webradios
+    </a>
+    <a href="podcasts.html" class="nav-item id-nav-podcast">
+           <i class="fas fa-podcast"></i> Podcasts
+    </a>
+    <a href="dlna_browser.html" class="nav-item id-nav-dlna">
+     <i class="fas fa-network-wired"></i> Diffusion réseau
+    </a>
+    <a href="dlna.html" class="nav-item id-nav-dlna">
+               <i class="fas fa-hdd"></i> Musique enregistrée
+    </a>
+    <a href="upload.html" class="nav-item id-nav-upload">
+        <i class="fas fa-mobile-alt"></i> Diffuser depuis l'appareil
+    </a>
+    <a href="remote.html" class="nav-item id-nav-remote">
+           <i class="fas fa-gamepad"></i> Télécommande
+    </a>
+    <a href="alarm.html" class="nav-item id-nav-reveil">
+             <i class="fas fa-clock"></i> Réveil
+    </a>
+    <a href="config.html" class="nav-item id-nav-config">
+           <i class="fas fa-cog"></i> Configuration
+    </a>
+    <a href="#" class="nav-item" target="_blank" onclick="window.location.href = 'http://' + window.location.hostname + '/tools'">
+             <i class="fas fa-tools"></i> Administration
+    </a>
+</div>

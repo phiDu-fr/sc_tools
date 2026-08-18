@@ -1,0 +1,37 @@
+	blankPresetST.sh
+change_accountId.sh
+change_cfg.sh
+change_ip.sh
+change_marge.sh
+	change_speaker.sh
+	check_mp3.sh
+	chrono.sh
+	cmdST.sh
+control_data.sh
+	cp_nas.sh
+create_data.sh
+create_remote_services.sh
+discoverST.sh
+docker_menage.sh
+	lireMP3.sh
+	md_doc.sh
+	mesure_reboot.sh
+presets_check.sh
+presets_update.sh
+	radio_browser.sh
+reboot_raspberry.sh
+rebootST.sh
+rebuild_minidlna.sh
+	removeCovers.sh
+reset_bt.sh
+	resetStateST.sh
+	rootST.sh
+	sauve.sh
+scanLan.sh
+send_key.sh
+setup_audio_daemon.sh
+sources_update.sh
+ST10stereo.sh
+	swapRpiZero2.sh
+	wifi_discover.sh
+	wifi_setup.sh

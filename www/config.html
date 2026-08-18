@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#121212">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="SoundCork">
+    <link rel="apple-touch-icon" href="img/icon-192.png">
+
+    <title>⚙️ Configuration - SoundTouch</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="stylesheet" href="css/global.css">
+    <style>
+        .config-container { max-width: 800px; margin: 0 auto; padding-bottom: 50px; }
+        .config-section { background-color: var(--bg-elevated); padding: 25px; border-radius: 12px; margin-bottom: 25px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+        .config-header { font-size: 18px; font-weight: bold; margin-bottom: 20px; color: var(--spotify-green); border-bottom: 1px solid #333; padding-bottom: 10px; display: flex; align-items: center; gap: 10px; }
+        .config-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; flex-wrap: wrap; gap: 15px; }
+        .config-input, .config-select { padding: 12px; border-radius: 6px; border: 1px solid #333; background: var(--bg-base); color: white; flex: 1; min-width: 200px; outline: none; }
+        .config-input:focus, .config-select:focus { border-color: var(--spotify-green); }
+        .config-btn { background: var(--spotify-green); color: black; border: none; padding: 12px 24px; border-radius: 500px; font-weight: bold; cursor: pointer; transition: transform 0.1s; white-space: nowrap; }
+        .config-btn:hover { transform: scale(1.05); background: #1ed760; }
+        
+        .config-toggle { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+        .toggle-switch { position: relative; width: 50px; height: 26px; background-color: #333; border-radius: 26px; transition: 0.3s; }
+        .toggle-switch::after { content: ''; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; background-color: white; border-radius: 50%; transition: 0.3s; }
+        input[type="checkbox"]:checked + .toggle-switch { background-color: var(--spotify-green); }
+        input[type="checkbox"]:checked + .toggle-switch::after { transform: translateX(24px); }
+        
+        .slider-container { display: flex; align-items: center; gap: 15px; flex: 1; min-width: 200px; }
+        input[type="range"] { flex: 1; accent-color: var(--spotify-green); cursor: pointer; }
+        .range-val { font-weight: bold; width: 35px; text-align: center; background: #333; padding: 5px; border-radius: 4px; }
+        
+        .status-bar { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background-color: #333; color: white; padding: 12px 24px; border-radius: 500px; font-weight: bold; box-shadow: 0 8px 24px rgba(0,0,0,0.5); z-index: 2000; display: none; transition: opacity 0.3s; }
+        .status-success { background-color: var(--spotify-green); color: black; }
+        .status-error { background-color: #FA243C; color: white;}
+        .status-warning { background-color: #FF9900; color: black;}
+    </style>
+</head>
+<body>
+    <div id="status-bar" class="status-bar">Notification</div>
+
+    <div class="main-container">
+        <div id="mobile-overlay" class="sidebar-overlay" onclick="toggleMobileMenu()"></div>
+        <nav class="sidebar"></nav>
+
+        <main class="main-view">
+            <div class="top-bar">
+                <div style="display: flex; flex: 1; min-width: 0; align-items: center;">
+                    <button class="mobile-menu-btn" onclick="toggleMobileMenu(event)">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <h2 class="section-title" style="margin: 0; padding-left: 15px;">
+                        <i class="fas fa-cog" style="color: var(--spotify-green); margin-right: 10px;"></i> Configuration de l'enceinte
+                    </h2>
+                </div>
+                <div class="remote-wrapper" id="remote-wrapper"></div>
+            </div>
+
+            <div class="config-container">
+                <div id="no-speaker-msg" style="text-align: center; color: var(--text-subdued); margin: 40px 0;">
+                    <div class="loader" style="margin: 0 auto 15px auto;"></div>
+                    Sélectionne une enceinte dans le menu pour la configurer...
+                </div>
+
+                <div id="config-forms" class="hidden">
+                    
+                    <!-- Nom de l'enceinte -->
+                    <div class="config-section">
+                        <div class="config-header"><i class="fas fa-tag"></i> Nom de l'enceinte</div>
+                        <div class="config-row">
+                            <input type="text" id="conf-name" class="config-input" placeholder="Ex: Salon">
+                            <button class="config-btn" onclick="saveName()">Enregistrer</button>
+                        </div>
+                    </div>
+
+                    <!-- Basses -->
+                    <div class="config-section">
+                        <div class="config-header"><i class="fas fa-volume-down"></i> Réduction des Basses</div>
+                        <p style="font-size:13px; color:var(--text-subdued); margin-bottom:15px;">Ajuste le niveau des basses de ton enceinte (plage de -9 à 0).</p>
+                        <div class="config-row">
+                            <div class="slider-container">
+                                <input type="range" id="conf-bass" min="-9" max="0" value="0" oninput="document.getElementById('bass-val').innerText = this.value">
+                                <span id="bass-val" class="range-val">0</span>
+                            </div>
+                            <button class="config-btn" onclick="saveBass()">Appliquer</button>
+                        </div>
+                    </div>
+
+                    <!-- Horloge -->
+                    <div class="config-section">
+                        <div class="config-header"><i class="fas fa-clock"></i> Horloge</div>
+                        <p style="font-size:13px; color:var(--text-subdued); margin-bottom:15px;">Affiche et configure l'horloge sur l'écran (disponible selon le modèle).</p>
+                        
+                        <div class="config-row">
+                            <label class="config-toggle">
+                                <input type="checkbox" id="conf-clock-enable" style="display:none;" checked>
+                                <div class="toggle-switch"></div>
+                                <span>Afficher l'horloge</span>
+                            </label>
+                        </div>
+                        
+                        <div class="config-row">
+                            <select id="conf-TZ" class="config-select">
+                                <option value="Europe/Paris" selected>Europe/Paris</option>
+                                <option value="Europe/London">Europe/London</option>
+                                <option value="Europe/Berlin">Europe/Berlin</option>
+                            </select>
+                            <label class="config-toggle">
+                                <input type="checkbox" id="conf-clock-24" style="display:none;" checked>
+                                <div class="toggle-switch"></div>
+                                <span>Format 24h</span>
+                            </label>
+                        </div>
+                        
+                        <div class="config-row">
+                            <span style="font-size: 14px; width: 90px; color: var(--text-subdued);">Luminosité :</span>
+                            <div class="slider-container">
+                                <input type="range" id="conf-bri" min="0" max="100" value="70" oninput="document.getElementById('bri-val').innerText = this.value">
+                                <span id="bri-val" class="range-val">70</span>
+                            </div>
+                        </div>
+
+                        <div class="config-row" style="justify-content: flex-end; margin-top: 15px;">
+                            <button class="config-btn" onclick="saveClock()">Mettre à jour l'horloge</button>
+                        </div>
+                    </div>
+
+                    <!-- Langue -->
+                    <div class="config-section">
+                        <div class="config-header"><i class="fas fa-language"></i> Langue système</div>
+                        <div class="config-row">
+                            <select id="conf-language" class="config-select">
+                                <option value="5" selected>Français</option>
+                                <option value="1">Dansk</option>
+                                <option value="2">Deutsch</option>
+                                <option value="3">English</option>
+                                <option value="4">Español</option>
+                                <option value="6">Italiano</option>
+                                <option value="7">Nederlands</option>
+                                <option value="8">Svenska</option>
+                                <option value="9">日本語</option>
+                                <option value="10">简体中文</option>
+                                <option value="11">繁體中文</option>
+                                <option value="12">한국어</option>
+                                <option value="13">ไทย</option>
+                                <option value="14">Čeština</option>
+                                <option value="15">Suomi</option>
+                                <option value="16">Ελληνικά</option>
+                                <option value="17">Norsk</option>
+                                <option value="18">Polski</option>
+                                <option value="19">Português</option>
+                                <option value="20">Română</option>
+                                <option value="21">Русский</option>
+                                <option value="22">Slovenščina</option>
+                                <option value="23">Türkçe</option>
+                                <option value="24">Magyar</option>
+                            </select>
+                            <button class="config-btn" onclick="saveLanguage()">Appliquer</button>
+                        </div>
+                    </div>
+
+                    <!-- Mise en veille -->
+                    <div class="config-section">
+                        <div class="config-header"><i class="fas fa-power-off"></i> Mise en veille automatique</div>
+                        <p style="font-size:13px; color:var(--text-subdued); margin-bottom:15px;">L'enceinte se mettra en veille d'elle-même après 20 minutes d'inactivité.</p>
+                        <div class="config-row">
+                            <label class="config-toggle">
+                                <input type="checkbox" id="conf-timeout-enable" style="display:none;" checked>
+                                <div class="toggle-switch"></div>
+                                <span>Activer la mise en veille</span>
+                            </label>
+                            <button class="config-btn" onclick="saveTimeout()">Appliquer</button>
+                        </div>
+                    </div>
+
+                    <!-- Optimisation AirPlay -->
+                    <div class="config-section">
+                        <div class="config-header"><i class="fab fa-apple"></i> Optimisation AirPlay (Vidéo Sync)</div>
+                        <p style="font-size:13px; color:var(--text-subdued); margin-bottom:15px;">Désactive le délai audio de traitement pour éviter le décalage lors du visionnage d'une vidéo.</p>
+                        <div class="config-row">
+                            <label class="config-toggle">
+                                <input type="checkbox" id="conf-airplay-sync" style="display:none;">
+                                <div class="toggle-switch"></div>
+                                <span>Désactiver le délai (Optimisation activée)</span>
+                            </label>
+                            <button class="config-btn" onclick="saveAirplay()">Appliquer</button>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <footer class="player-bar"></footer>
+
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="js/app.js"></script>
+    
+    <script>
+        let currentConfigIp = null;
+
+        function showNotification(msg, type = "warning") {
+            const statusBar = document.getElementById('status-bar');
+            statusBar.innerText = msg;
+            statusBar.className = `status-bar status-${type}`;
+            statusBar.style.display = 'block';
+            setTimeout(() => { statusBar.style.display = 'none'; }, 4000);
+        }
+
+        document.addEventListener("DOMContentLoaded", async () => {
+            await loadComponent(null, "components/remotesimple.svg", "#remote-wrapper");
+            setInterval(checkSelectedSpeaker, 1000);
+        });
+
+        function checkSelectedSpeaker() {
+            if (typeof getSelectedIps !== "function" || !globalData.speakers) return;
+            const ips = getSelectedIps();
+            const forms = document.getElementById("config-forms");
+            const noMsg = document.getElementById("no-speaker-msg");
+
+            if (ips.length === 0 || !globalData.speakers[ips[0]]) {
+                forms.classList.add('hidden');
+                noMsg.classList.remove('hidden');
+                currentConfigIp = null;
+                return;
+            }
+
+            if (currentConfigIp !== ips[0]) {
+                currentConfigIp = ips[0];
+                forms.classList.remove('hidden');
+                noMsg.classList.add('hidden');
+                document.getElementById('conf-name').value = globalData.speakers[currentConfigIp].name || "";
+                fetchCurrentConfig(currentConfigIp);
+            }
+        }
+
+        async function fetchCurrentConfig(ip) {
+            // Lecture des Basses
+            try {
+                let res = await fetch(`http://${ip}:8090/bass`);
+                if (res.ok) {
+                    let text = await res.text();
+                    let match = text.match(/<targetbass>(-?\d+)<\/targetbass>/);
+                    if (match) {
+                        let val = parseInt(match[1]);
+                        if (val > 0) val = 0; 
+                        document.getElementById('conf-bass').value = val;
+                        document.getElementById('bass-val').innerText = val;
+                    }
+                }
+            } catch (e) {
+                console.log("Impossible de lire les basses.");
+            }
+
+            // Lecture du Nom
+            try {
+                let resName = await fetch(`http://${ip}:8090/name`);
+                if (resName.ok) {
+                    let textName = await resName.text();
+                    let matchName = textName.match(/<name>(.*?)<\/name>/);
+                    if (matchName) {
+                        document.getElementById('conf-name').value = matchName[1];
+                    }
+                }
+            } catch (e) {
+                console.log("Impossible de lire le nom.");
+            }
+        }
+
+        async function sendDirectXml(endpoint, xmlData) {
+            if (!currentConfigIp) return showNotification("Sélectionne une enceinte.", "error");
+            const url = `http://${currentConfigIp}:8090/${endpoint}`;
+            
+            try {
+                const res = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/xml' },
+                    body: xmlData
+                });
+                
+                if (res.ok || res.type === 'opaque') {
+                    showNotification("Mise à jour envoyée avec succès !", "success");
+                    setTimeout(() => fetch('/api/poll', {method:'POST'}), 1000);
+                } else {
+                    showNotification("Erreur lors de la communication avec l'enceinte.", "error");
+                }
+            } catch (e) {
+                // Tentative en mode no-cors
+                try {
+                    await fetch(url, { method: 'POST', mode: 'no-cors', body: xmlData });
+                    showNotification("Commande envoyée à l'enceinte.", "success");
+                    setTimeout(() => fetch('/api/poll', {method:'POST'}), 1000);
+                } catch (err) {
+                    showNotification("Impossible de joindre l'enceinte.", "error");
+                }
+            }
+        }
+
+        function saveName() {
+            const name = document.getElementById('conf-name').value;
+            if(!name) return;
+            sendDirectXml('name', `<name>${name}</name>`);
+            
+            // Met à jour l'UI locale immédiatement pour la sensation de fluidité
+            if (globalData.speakers[currentConfigIp]) {
+                globalData.speakers[currentConfigIp].name = name;
+            }
+        }
+
+        function saveBass() {
+            const val = document.getElementById('conf-bass').value;
+            sendDirectXml('bass', `<bass>${val}</bass>`);
+        }
+
+        function saveClock() {
+            const isEnabled = document.getElementById('conf-clock-enable').checked;
+            const tz = document.getElementById('conf-TZ').value;
+            const is24h = document.getElementById('conf-clock-24').checked;
+            const format = is24h ? "TIME_FORMAT_24HOUR_ID" : "TIME_FORMAT_12HOUR_ID";
+            const brightness = document.getElementById('conf-bri').value;
+            
+            const xml = `<clockDisplay><clockConfig timezoneInfo="${tz}" userEnable="${isEnabled}" timeFormat="${format}" userOffsetMinute="0" brightnessLevel="${brightness}" userUtcTime="0"/></clockDisplay>`;
+            sendDirectXml('clockDisplay', xml);
+        }
+
+        function saveLanguage() {
+            const val = document.getElementById('conf-language').value;
+            sendDirectXml('language', `<sysLanguage>${val}</sysLanguage>`);
+        }
+
+        function saveTimeout() {
+            const isEnabled = document.getElementById('conf-timeout-enable').checked;
+            sendDirectXml('systemtimeout', `<systemtimeout><powersaving_enabled>${isEnabled}</powersaving_enabled></systemtimeout>`);
+        }
+
+        function saveAirplay() {
+            const syncActive = document.getElementById('conf-airplay-sync').checked;
+            const delay = syncActive ? "0" : "100";
+            sendDirectXml('audiodspcontrols', `<audiodspcontrols videosyncaudiodelay="${delay}"/>`);
+        }
+    </script>
+</body>
+</html>

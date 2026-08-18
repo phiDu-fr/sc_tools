@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+ 	<!-- PWA et Manifest -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#121212">
+
+    <!-- Optimisations spécifiques pour iOS (Apple) -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="SoundCork">
+    <link rel="apple-touch-icon" href="img/icon-192.png">
+
+   <title>En Direct - SoundTouch</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="stylesheet" href="css/global.css">
+    <style>
+        .now-playing-container {
+            display: flex;
+            gap: 40px;
+            background-color: var(--bg-elevated);
+            padding: 30px;
+            border-radius: 12px;
+            margin-bottom: 40px;
+            align-items: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        
+        .np-cover-wrapper {
+            width: 250px;
+            height: 250px;
+            flex-shrink: 0;
+            background-color: #333;
+            border-radius: 8px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            font-size: 64px;
+            color: var(--text-subdued);
+        }
+        .np-cover-img { width: 100%; height: 100%; object-fit: contain; display: none; }
+        
+        .np-details { flex: 1; min-width: 0; }
+        .np-track { font-size: 36px; font-weight: bold; margin-bottom: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .np-artist { font-size: 20px; color: var(--text-subdued); margin-bottom: 20px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        
+        .np-meta-grid {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 8px 15px;
+            font-size: 13px;
+            color: var(--text-subdued);
+            margin-bottom: 25px;
+            background: var(--bg-highlight);
+            padding: 15px;
+            border-radius: 8px;
+        }
+        .np-meta-grid span { color: var(--text-base); font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
+
+        .progress-container { margin-top: 15px; }
+        .progress-bar-bg { 
+            width: 100%; 
+            height: 6px; 
+            background: #404040; 
+            border-radius: 3px; 
+            overflow: hidden; 
+        }
+        .progress-bar-fill { 
+            height: 100%; 
+            background: var(--spotify-green); 
+            width: 0%; 
+            transition: width 0.25s linear; 
+        }
+        .progress-time { 
+            display: flex; 
+            justify-content: space-between; 
+            font-size: 12px; 
+            color: var(--text-subdued); 
+            margin-top: 8px; 
+            font-family: monospace;
+            font-weight: bold;
+        }
+
+        .np-live-show {
+            display: flex;
+            gap: 15px;
+            margin-top: 25px;
+            padding: 15px;
+            background: var(--bg-highlight);
+            border-left: 4px solid #E63946; 
+            border-radius: 0 8px 8px 0;
+            align-items: center;
+        }
+        .np-show-img {
+            width: 100px;
+            height: 60px;
+            border-radius: 4px;
+            object-fit: cover;
+            display: none; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+        .np-show-info {
+            flex: 1;
+            min-width: 0; 
+        }
+        .np-show-badge {
+            font-size: 11px;
+            text-transform: uppercase;
+            color: #E63946;
+            font-weight: bold;
+            letter-spacing: 1px;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .np-show-badge i {
+            font-size: 8px; 
+        }
+        .np-show-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: var(--text-base);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .np-show-desc {
+            font-size: 13px;
+            color: var(--text-subdued);
+            margin-top: 4px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2; 
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .mid-remote-wrapper {
+            display: flex;
+            justify-content: flex-end; 
+            align-items: center;
+            width: 100%;
+            max-width: 250px; 
+            margin: 0; 
+            position: relative;
+            z-index: 105;
+        }
+        
+        #mid-remote-wrapper svg {
+            width: 100%; 
+            height: auto;
+            display: block;
+            filter: drop-shadow(0 15px 25px rgba(0,0,0,0.5));
+            pointer-events: auto; 
+        }
+
+        #mid-remote-wrapper svg text {
+            pointer-events: none; 
+        }
+        
+        @media (max-width: 768px) {
+            .now-playing-container {
+                flex-direction: column !important; 
+                padding: 15px !important; 
+                gap: 20px !important; 
+                margin-bottom: 20px !important; 
+                text-align: center; 
+            }
+            .np-cover-wrapper {
+                width: 240px !important;
+                margin: 0 auto; 
+            }
+            .np-details {
+                width: 100% !important;
+                flex: none !important; 
+            }
+            .np-track {
+                font-size: 22px !important;
+                white-space: normal !important; 
+            }
+            .np-artist {
+                font-size: 16px !important;
+                margin-bottom: 15px !important;
+            }
+            .np-meta-grid {
+                padding: 10px !important;
+                margin-bottom: 15px !important;
+                text-align: left; 
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="main-container">
+        <div id="mobile-overlay" class="sidebar-overlay" onclick="toggleMobileMenu()"></div>
+        <nav class="sidebar"></nav>
+
+        <main class="main-view">
+            <div class="top-bar">
+                <!-- <div style="display: flex; width: 100%; align-items: center;"> -->
+				<div style="display: flex; flex: 1; min-width: 0; align-items: center;">
+                    <button class="mobile-menu-btn" onclick="toggleMobileMenu(event)">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <h2 class="section-title" style="margin: 0; padding-left: 15px;">
+                        <i class="fas fa-broadcast-tower" style="color: var(--spotify-green); margin-right: 10px;"></i> Lecture en cours
+                    </h2>
+                </div>
+                <div class="sources-wrapper" id="sources-wrapper" style="max-width: 150px; width: 100%; margin: 0 15px;"></div>
+                <div class="mid-remote-wrapper" id="mid-remote-wrapper">
+                </div>
+            </div>
+
+            <div id="no-speaker-msg" style="text-align: center; color: var(--text-subdued); margin: 40px 0;">
+                <div class="loader" style="margin: 0 auto 15px auto;"></div>
+                Recherche des enceintes en cours...
+            </div>
+
+            <div class="now-playing-container hidden" id="nowPlayingCard">
+                <div class="np-cover-wrapper">
+                    <i class="fas fa-music" id="np-cover-fallback"></i>
+                    <img id="np-cover-img" class="np-cover-img" src="" alt="Cover">
+                </div>
+                
+                <div class="np-details">
+                    <div class="np-track" id="np-track">En attente...</div>
+                    <div class="np-artist" id="np-artist">Veuillez sélectionner une enceinte</div>
+                    
+                    <div class="np-meta-grid">
+                        <div>Album :</div><span id="np-album">-</span>
+                        <div>Playlist :</div><span id="np-playlist">-</span>
+                        <div>Source :</div><span id="np-source">-</span>
+                        <div>Statut :</div><span id="np-status">-</span>
+                    </div>
+
+                    <div class="progress-container">
+                        <div class="progress-bar-bg">
+                            <div class="progress-bar-fill" id="np-progress-fill"></div>
+                        </div>
+                        <div class="progress-time">
+                            <span id="np-time-current">0:00</span>
+                            <span id="np-time-total">0:00</span>
+                        </div>
+                    </div>
+
+                    <div id="np-live-show" class="np-live-show hidden">
+                        <img id="np-show-img" class="np-show-img" src="" alt="Émission">
+                        <div class="np-show-info">
+                            <div class="np-show-badge"><i class="fas fa-circle"></i> En direct</div>
+                            <div class="np-show-title" id="np-show-title">-</div>
+                            <div class="np-show-desc" id="np-show-desc">-</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <footer class="player-bar"></footer>
+
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="js/app.js"></script>
+    
+    <script>
+        let currentShuffle = "SHUFFLE_OFF";
+        let currentRepeat = "REPEAT_OFF";
+
+        document.addEventListener("DOMContentLoaded", async () => {
+            await loadComponent(null, "components/remotemid.svg", "#mid-remote-wrapper");
+            
+            window.sendKey = async function(keyName) { if(typeof sendCommand === "function") await sendCommand(keyName); };
+            window.sendPreset = async function(id) { if(typeof playPreset === "function") await playPreset(id); };
+            
+            onStateUpdated();
+        });
+
+        function onStateUpdated() {
+            if (typeof getSelectedIps !== "function" || !globalData.speakers) return;
+
+            const ips = getSelectedIps();
+            const npCard = document.getElementById("nowPlayingCard");
+            const noMsg = document.getElementById("no-speaker-msg");
+
+            if (ips.length === 0 || !globalData.speakers[ips[0]]) {
+                npCard.classList.add('hidden');
+                noMsg.classList.remove('hidden');
+                noMsg.innerText = "Cochez une enceinte dans le menu pour voir les détails.";
+                updateBigRemoteUI({}); 
+                return;
+            }
+            
+            const spk = globalData.speakers[ips[0]];
+            
+            if (spk.state === 'OFF' || spk.state === 'STANDBY') {
+                npCard.classList.add('hidden');
+                noMsg.classList.remove('hidden');
+                noMsg.innerText = "L'enceinte sélectionnée est actuellement en veille.";
+                updateBigRemoteUI({}); 
+                return;
+            }
+
+            npCard.classList.remove('hidden');
+            noMsg.classList.add('hidden');
+
+            document.getElementById("np-track").textContent = spk.track || "Prêt";
+            document.getElementById("np-artist").textContent = spk.artist || "Artiste inconnu";
+            document.getElementById("np-album").textContent = spk.album || "-";
+            document.getElementById("np-playlist").textContent = spk.playlist || "Flux Direct";
+            document.getElementById("np-source").textContent = spk.source || "-";
+
+            const progressContainer = document.querySelector(".progress-container");
+            const radioSources = ['TUNEIN', 'RADIO_BROWSER', 'LOCAL_INTERNET_RADIO'];
+
+            if (radioSources.includes(spk.source)) {
+                progressContainer.style.display = 'none';
+            } else {
+                progressContainer.style.display = 'block';
+            }
+    
+            let statusText = spk.playStatus;
+            if (statusText === "PLAY_STATE") statusText = "▶ Lecture";
+            if (statusText === "PAUSE_STATE") statusText = "⏸ Pause";
+            if (statusText === "BUFFERING_STATE") statusText = "⏳ Chargement...";
+            if (statusText === "STOP_STATE") statusText = "⏹ Arrêté";
+            document.getElementById("np-status").textContent = statusText || "Prêt";
+
+            const coverImg = document.getElementById("np-cover-img");
+            const fallbackIcon = document.getElementById("np-cover-fallback");
+            
+            let finalCoverUrl = spk.cover;
+            
+            if (finalCoverUrl && finalCoverUrl !== "FA_ICON" && finalCoverUrl !== "SHOW_DEFAULT_IMAGE") {
+                const currentTrackName = spk.track || spk.playlist || "Unknown";
+                if (!finalCoverUrl.includes('cb=')) {
+                    const separator = finalCoverUrl.includes('?') ? '&' : '?';
+                    finalCoverUrl += `${separator}cb=${encodeURIComponent(currentTrackName)}`;
+                }            
+                
+                coverImg.src = finalCoverUrl;
+                coverImg.style.display = "block";
+                fallbackIcon.style.display = "none";
+            } else {
+                coverImg.style.display = "none";
+                fallbackIcon.style.display = "block";
+                
+                if (spk.source === 'LOCAL_INTERNET_RADIO' || spk.source === 'RADIO_BROWSER') {
+                    fallbackIcon.className = "fas fa-broadcast-tower";
+                } else {
+                    fallbackIcon.className = "fas fa-music";
+                }
+            }
+
+            const liveShowBlock = document.getElementById("np-live-show");
+            
+            if (spk.show_title) {
+                liveShowBlock.classList.remove('hidden');
+                document.getElementById("np-show-title").textContent = spk.show_title;
+                document.getElementById("np-show-desc").textContent = spk.show_desc || ""; 
+                
+                const showImg = document.getElementById("np-show-img");
+                if (spk.show_image && spk.show_image !== "" && spk.show_image !== "FA_ICON") {
+                    showImg.src = spk.show_image;
+                    showImg.style.display = "block";
+                } else {
+                    showImg.style.display = "none";
+                }
+            } else {
+                liveShowBlock.classList.add('hidden');
+            }
+
+            updateBigRemoteUI(spk);
+        }
+
+        setInterval(function runFluidTimer() {
+            if (typeof getSelectedIps !== "function" || !globalData.speakers) return;
+            const ips = getSelectedIps();
+            if (ips.length === 0) return;
+            const spk = globalData.speakers[ips[0]];
+            if (!spk) return;
+
+            if (spk.time_total && parseInt(spk.time_total) > 0) {
+                let pos = spk.local_time_base || 0;
+                
+                if (spk.playStatus === "PLAY_STATE") {
+                    pos += (Date.now() - (spk.local_time_anchor || Date.now())) / 1000;
+                }
+                
+                let tot = parseInt(spk.time_total);
+                if (pos > tot) pos = tot;
+                
+                refreshProgressDOM(pos, tot);
+            } else {
+                refreshProgressDOM(0, 0);
+            }
+        }, 250);
+
+        function refreshProgressDOM(elapsed, total) {
+            const progressFill = document.getElementById("np-progress-fill");
+            const timeCurrent = document.getElementById("np-time-current");
+            const timeTotal = document.getElementById("np-time-total");
+            
+            if (total > 0) {
+                const pct = (elapsed * 100) / total;
+                if (progressFill) progressFill.style.width = pct + "%";
+                if (timeCurrent) timeCurrent.textContent = formatTime(elapsed);
+                if (timeTotal) timeTotal.textContent = formatTime(total);
+            } else {
+                if (progressFill) progressFill.style.width = "0%";
+                if (timeCurrent) timeCurrent.textContent = formatTime(elapsed);
+                if (timeTotal) timeTotal.textContent = "Live / Direct";
+            }
+        }
+
+        function updateBigRemoteUI(spk) {
+            currentShuffle = spk.shuffleSetting || "SHUFFLE_OFF";
+            currentRepeat = spk.repeatSetting || "REPEAT_OFF";
+
+            const opActive = "1";        
+            const opInactive = "0.3";    
+
+            const logoShuff = document.getElementById('logoShuff');
+            const logoRep = document.getElementById('logoRep');
+            const logoRepOne = document.getElementById('logoRepOne');
+
+            if (logoShuff) logoShuff.style.opacity = currentShuffle === "SHUFFLE_ON" ? opActive : opInactive;
+
+            if (logoRep && logoRepOne) {
+                if (currentRepeat === "REPEAT_ALL") {
+                    logoRep.style.opacity = opActive;
+                    logoRepOne.style.display = "none";
+                } else if (currentRepeat === "REPEAT_ONE") {
+                    logoRep.style.opacity = opActive;
+                    logoRepOne.style.display = "block"; 
+                    logoRepOne.style.opacity = opActive;
+                } else {
+                    logoRep.style.opacity = opInactive;
+                    logoRepOne.style.display = "none";  
+                }
+            }
+
+            for (let i = 1; i <= 6; i++) {
+                let presetName = (globalData.presets && globalData.presets[i]) ? globalData.presets[i] : "";
+                const svgTextEl = document.getElementById(`preset-text-${i}`);
+                if (svgTextEl) {
+                    svgTextEl.textContent = presetName.length > 14 ? presetName.substring(0, 13) + "_" : presetName;
+                }
+            }
+        }
+
+        async function toggleShuffle() {
+            const targetKey = currentShuffle === "SHUFFLE_ON" ? "SHUFFLE_OFF" : "SHUFFLE_ON";
+            if (typeof sendCommand === "function") await sendCommand(targetKey);
+        }
+
+        async function toggleRepeat() {
+            let targetKey = "REPEAT_OFF";
+            if (currentRepeat === "REPEAT_OFF") targetKey = "REPEAT_ALL";
+            else if (currentRepeat === "REPEAT_ALL") targetKey = "REPEAT_ONE";
+            else if (currentRepeat === "REPEAT_ONE") targetKey = "REPEAT_OFF";
+            if (typeof sendCommand === "function") await sendCommand(targetKey);
+        }
+    </script>
+</body>
+</html>

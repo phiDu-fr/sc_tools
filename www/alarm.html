@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+ 	<!-- PWA et Manifest -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#121212">
+
+    <!-- Optimisations spécifiques pour iOS (Apple) -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="SoundCork">
+    <link rel="apple-touch-icon" href="img/icon-192.png">
+
+   <title>⏰ Réveil - SoundTouch</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="stylesheet" href="css/global.css">
+    <style>
+        /* --- CACHER LES ÉLÉMENTS GLOBAUX INUTILES POUR LE RÉVEIL --- */
+        #speakers-list, .nav-section:first-child .action-buttons { display: none !important; }
+        .nav-section:first-child h3 { display: none !important; }
+
+        /* --- STYLES DU FORMULAIRE --- */
+        .form-section { background-color: var(--bg-elevated); padding: 20px; border-radius: 8px; margin-bottom: 25px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);}
+        .form-title { font-size: 16px; font-weight: bold; margin-bottom: 15px; color: var(--spotify-green); border-bottom: 1px solid #333; padding-bottom: 10px;}
+        
+        /* Enceintes (Grille) */
+        .alarm-spk-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+        .alarm-spk-btn { background-color: var(--bg-base); color: var(--text-base); border: 2px solid transparent; padding: 15px; border-radius: 8px; cursor: pointer; text-align: center; transition: all 0.2s; display: flex; flex-direction: column; gap: 5px;}
+        .alarm-spk-btn:hover { background-color: var(--bg-highlight); }
+        .alarm-spk-btn.active { border-color: var(--spotify-green); background-color: rgba(29, 185, 84, 0.1); }
+        .alarm-spk-btn.disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* Jours d'activation (Pills) */
+        .days-container { display: flex; flex-wrap: wrap; gap: 10px; }
+        .day-checkbox { display: none; }
+        .day-label { background-color: var(--bg-base); color: var(--text-subdued); padding: 10px 15px; border-radius: 500px; cursor: pointer; font-weight: bold; transition: all 0.2s; border: 1px solid transparent; user-select: none;}
+        .day-checkbox:checked + .day-label { background-color: var(--spotify-green); color: black; border-color: var(--spotify-green); }
+
+        /* Selects (Heures/Minutes) */
+        .time-select-container { display: flex; gap: 20px; }
+        .time-select-group { flex: 1; display: flex; flex-direction: column; gap: 8px;}
+        .time-select { padding: 15px; border-radius: 8px; border: none; background-color: var(--bg-base); color: white; font-size: 18px; outline: none; cursor: pointer; font-weight: bold; text-align: center;}
+
+        /* Bouton Valider */
+        .btn-submit-alarm { background-color: var(--spotify-green); color: black; border: none; padding: 15px; border-radius: 500px; font-size: 16px; font-weight: bold; cursor: pointer; width: 100%; transition: transform 0.1s; margin-top: 10px;}
+        .btn-submit-alarm:hover { transform: scale(1.02); background-color: #1ed760; }
+
+        /* --- MINI SVG --- */
+        .mini-remote-wrapper { max-width: 200px; margin: 0 auto; display: block; }
+        .active-preset { fill: rgba(29, 185, 84, 0.4) !important; }
+
+        /* --- LISTE DES ALARMES --- */
+        .alarm-card { background-color: var(--bg-elevated); border-left: 4px solid var(--spotify-green); padding: 15px 20px; border-radius: 6px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+        .alarm-time { font-size: 24px; font-weight: bold; color: var(--text-base); }
+        .alarm-info { font-size: 13px; color: var(--text-subdued); margin-top: 5px;}
+        .badge-preset { background-color: #333; color: white; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; margin-right: 10px;}
+        
+        .status-bar { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background-color: #333; color: white; padding: 12px 24px; border-radius: 500px; font-weight: bold; box-shadow: 0 8px 24px rgba(0,0,0,0.5); z-index: 2000; display: none; transition: opacity 0.3s; }
+        .status-success { background-color: var(--spotify-green); color: black; }
+        .status-error { background-color: #FA243C; color: white;}
+    </style>
+</head>
+<body>
+
+    <div id="status-bar" class="status-bar">Notification</div>
+
+    <div class="main-container">
+        <div id="mobile-overlay" class="sidebar-overlay" onclick="toggleMobileMenu()"></div>
+        <nav class="sidebar"></nav>
+
+        <main class="main-view">
+            
+            <div class="top-bar">
+                <div style="display: flex; width: 100%; align-items: center;">
+                    <button class="mobile-menu-btn" onclick="toggleMobileMenu(event)">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <h2 class="section-title" style="margin: 0; padding-left: 15px;">
+                        <i class="fas fa-clock" style="color: var(--spotify-green); margin-right: 10px;"></i> Programmer un Réveil
+                    </h2>
+                </div>
+            </div>
+
+            <form id="alarm-form">
+                
+                <div class="form-section">
+                    <div class="form-title">1. Choisir l'enceinte (Même en veille)</div>
+                    <div id="alarm-speakers" class="alarm-spk-grid">
+                        <div class="loader"></div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <div class="form-title">2. Choisir la station (Préréglage)</div>
+                    <div class="mini-remote-wrapper" id="mini-remote-wrapper"></div>
+                </div>
+
+                <div class="form-section">
+                    <div class="form-title">3. Heure du réveil</div>
+                    <div class="time-select-container">
+                        <div class="time-select-group">
+                            <span style="color: var(--text-subdued); font-size: 13px;">Heure :</span>
+                            <select id="alarm-hour" class="time-select" required></select>
+                        </div>
+                        <div class="time-select-group">
+                            <span style="color: var(--text-subdued); font-size: 13px;">Minute :</span>
+                            <select id="alarm-minute" class="time-select" required></select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <div class="form-title">4. Jours d'activation</div>
+                    <div class="days-container">
+                        <input class="day-checkbox" type="checkbox" value="1" id="day-1"><label class="day-label" for="day-1">Lun</label>
+                        <input class="day-checkbox" type="checkbox" value="2" id="day-2"><label class="day-label" for="day-2">Mar</label>
+                        <input class="day-checkbox" type="checkbox" value="3" id="day-3"><label class="day-label" for="day-3">Mer</label>
+                        <input class="day-checkbox" type="checkbox" value="4" id="day-4"><label class="day-label" for="day-4">Jeu</label>
+                        <input class="day-checkbox" type="checkbox" value="5" id="day-5"><label class="day-label" for="day-5">Ven</label>
+                        <input class="day-checkbox" type="checkbox" value="6" id="day-6"><label class="day-label" for="day-6">Sam</label>
+                        <input class="day-checkbox" type="checkbox" value="0" id="day-0"><label class="day-label" for="day-0">Dim</label>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-submit-alarm">💾 Enregistrer le réveil</button>
+            </form>
+
+            <h2 class="section-title" style="margin-top: 50px;">Alarmes Programmées</h2>
+            <div id="alarms-list" style="margin-bottom: 60px;">
+                </div>
+
+        </main>
+    </div>
+
+    <footer class="player-bar"></footer>
+
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+	<script src="js/app.js"></script>
+
+<script>
+        const dayMap = { "1": "Lun", "2": "Mar", "3": "Mer", "4": "Jeu", "5": "Ven", "6": "Sam", "0": "Dim" };
+        
+        let selectedAlarmIp = "";
+        let selectedAlarmSpeakerName = "";
+        let selectedAlarmPreset = "";
+
+        document.addEventListener("DOMContentLoaded", async () => {
+            // Remplir les Selects Heure/Min
+            initTimeSelects();
+            
+            // Forcer un cache-buster pour le mini SVG
+            const cacheBuster = "?t=" + new Date().getTime();
+            await loadComponent(null, "components/remotemini.svg" + cacheBuster, "#mini-remote-wrapper");
+
+            // Remplacer intelligemment le clic sur le preset pour CE formulaire (On ne lit pas la musique, on la sélectionne !)
+            window.playPreset = function(id) {
+                selectedAlarmPreset = "PRESET_" + id;
+                updatePresetSelectionUI();
+            };
+
+            if (typeof fetchState === "function") fetchState();
+            updateAlarmsList();
+        });
+
+        // --- LE CORRECTIF EST ICI ---
+        // On demande à la page de se mettre à jour toutes les secondes en lisant globalData
+        setInterval(onStateUpdated, 1000);
+        // ----------------------------
+
+        // ----------------------------------------------------
+        // NOTIFICATIONS
+        // ----------------------------------------------------
+        function showNotification(msg, type = "success") {
+            const statusBar = document.getElementById('status-bar');
+            statusBar.innerText = msg;
+            statusBar.className = `status-bar status-${type}`;
+            statusBar.style.display = 'block';
+            setTimeout(() => { statusBar.style.display = 'none'; }, 4000);
+        }
+
+        function initTimeSelects() {
+            const hSel = document.getElementById('alarm-hour');
+            let hHtml = '';
+            for (let i = 0; i < 24; i++) {
+                let s = i.toString().padStart(2, '0');
+                hHtml += `<option value="${s}">${s} h</option>`;
+            }
+            hSel.innerHTML = hHtml;
+
+            const mSel = document.getElementById('alarm-minute');
+            let mHtml = '';
+            for (let i = 0; i < 60; i++) {
+                let s = i.toString().padStart(2, '0');
+                mHtml += `<option value="${s}">${s} min</option>`;
+            }
+            mSel.innerHTML = mHtml;
+        }
+
+        // ----------------------------------------------------
+        // HOOK PRINCIPAL : RENDU DES ENCEINTES & SVG
+        // ----------------------------------------------------
+        function onStateUpdated() {
+            // Sécurité : on attend que app.js ait récupéré les données
+            if (!globalData || !globalData.speakers) return;
+
+            // 1. Liste des Enceintes pour le réveil (On affiche tout, même celles en OFF)
+            const spkDiv = document.getElementById('alarm-speakers');
+            if (Object.keys(globalData.speakers).length > 0) {
+                spkDiv.innerHTML = Object.entries(globalData.speakers).map(([ip, s]) => {
+                    const isSelected = (selectedAlarmIp === ip);
+                    const activeClass = isSelected ? 'active' : '';
+                    
+                    let stateColor = "var(--spotify-green)";
+                    if(s.state === "STANDBY") stateColor = "#FF9900";
+                    if(s.state === "OFF") stateColor = "red";
+
+                    return `
+                        <div class="alarm-spk-btn ${activeClass}" onclick="selectAlarmSpeaker('${ip}', '${s.name.replace(/'/g, "\\'")}')">
+                            <div style="font-weight:bold; font-size:14px;">${s.name}</div>
+                            <div style="font-size:12px; color:var(--text-subdued);">
+                                <span style="color:${stateColor}; margin-right:5px;">●</span>${s.state}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } else {
+                spkDiv.innerHTML = '<div style="color:var(--text-subdued);">Aucune enceinte détectée.</div>';
+            }
+
+            // 2. Mise à jour des noms de Presets sur le mini SVG
+            if (globalData.presets) {
+                for (let i = 1; i <= 6; i++) {
+                    let presetName = globalData.presets[i] || "";
+                    const svgTextEl = document.getElementById(`preset-text-${i}`);
+                    if (svgTextEl) {
+                        svgTextEl.textContent = presetName.length > 14 ? presetName.substring(0, 13) + "..." : presetName;
+                    }
+                }
+            }
+        }
+
+        function selectAlarmSpeaker(ip, name) {
+            selectedAlarmIp = ip;
+            selectedAlarmSpeakerName = name;
+            onStateUpdated(); // Rafraichit juste la vue locale
+        }
+
+        function updatePresetSelectionUI() {
+            for (let i = 1; i <= 6; i++) {
+                const rectEl = document.getElementById(`preset-rect-${i}`);
+                if (rectEl) {
+                    if (selectedAlarmPreset === `PRESET_${i}`) {
+                        rectEl.classList.add('active-preset');
+                    } else {
+                        rectEl.classList.remove('active-preset');
+                    }
+                }
+            }
+        }
+
+        // ----------------------------------------------------
+        // SOUMISSION DU FORMULAIRE
+        // ----------------------------------------------------
+        document.getElementById('alarm-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            if (!selectedAlarmIp) return showNotification("Veuillez sélectionner une enceinte.", "error");
+            if (!selectedAlarmPreset) return showNotification("Veuillez sélectionner un bouton Préréglage.", "error");
+
+            const checkedDays = Array.from(document.querySelectorAll('.day-checkbox:checked')).map(cb => cb.value);
+            if (checkedDays.length === 0) return showNotification("Veuillez cocher au moins un jour.", "error");
+
+            const payload = {
+                ip: selectedAlarmIp,
+                speakerName: selectedAlarmSpeakerName,
+                hour: parseInt(document.getElementById('alarm-hour').value, 10).toString(),
+                minute: parseInt(document.getElementById('alarm-minute').value, 10).toString(),
+                days: checkedDays.join(','),
+                vol: "25", // Valeur par défaut imposée
+                preset: selectedAlarmPreset
+            };
+
+            try {
+                const response = await fetch('/api/alarms', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (response.ok) {
+                    showNotification("⏰ Réveil enregistré !", "success");
+                    // Reset UI
+                    selectedAlarmPreset = "";
+                    document.getElementById('alarm-form').reset();
+                    updatePresetSelectionUI();
+                    updateAlarmsList();
+                } else {
+                    const txt = await response.text();
+                    showNotification("Erreur : " + txt, "error");
+                }
+            } catch (err) {
+                showNotification("Erreur réseau.", "error");
+            }
+        });
+
+        // ----------------------------------------------------
+        // LISTE DES ALARMES (Fetch indépendant)
+        // ----------------------------------------------------
+        async function updateAlarmsList() {
+            const listDiv = document.getElementById('alarms-list');
+            try {
+                const res = await fetch('/api/alarms');
+                const alarms = await res.json();
+
+                if (!alarms || alarms.length === 0) {
+                    listDiv.innerHTML = '<div style="color:var(--text-subdued); text-align:center;">Vous n\'avez aucun réveil actif.</div>';
+                    return;
+                }
+
+                listDiv.innerHTML = alarms.map((a, index) => {
+                    const cleanDays = a.days.split(',').map(d => dayMap[d] || d).join(', ');
+                    const prNum = a.preset.replace('PRESET_', '');
+                    return `
+                        <div class="alarm-card">
+                            <div>
+                                <span class="badge-preset">Preset ${prNum}</span>
+                                <span style="font-weight:bold;">${a.speakerName}</span>
+                                <div class="alarm-time">${a.hour.padStart(2, '0')}:${a.minute.padStart(2, '0')}</div>
+                                <div class="alarm-info"><i class="fas fa-calendar-alt"></i> ${cleanDays}</div>
+                            </div>
+                            <button class="btn-action" style="border-color:#FA243C; color:#FA243C; width:auto; padding:8px 15px;" onclick="deleteAlarm(${index})">
+                                <i class="fas fa-trash"></i> Supprimer
+                            </button>
+                        </div>
+                    `;
+                }).join('');
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        async function deleteAlarm(index) {
+            if (confirm("Voulez-vous vraiment supprimer ce réveil ?")) {
+                await fetch(`/api/alarms?index=${index}`, { method: 'DELETE' });
+                showNotification("🗑️ Réveil supprimé", "success");
+                updateAlarmsList();
+            }
+        }
+    </script>
+</body>
+</html>

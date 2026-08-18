@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#121212">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="SoundCork">
+    <link rel="apple-touch-icon" href="img/icon-192.png">
+
+    <title>Diffuser Fichier - SoundTouch</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="stylesheet" href="css/global.css">
+    <style>
+        .upload-container {
+            background-color: var(--bg-elevated);
+            padding: 40px 20px;
+            border-radius: 12px;
+            text-align: center;
+            margin-top: 20px;
+            border: 2px dashed #333;
+            transition: border-color 0.3s, background-color 0.3s;
+        }
+        .upload-container:hover {
+            border-color: var(--spotify-green);
+            background-color: var(--bg-highlight);
+        }
+        .upload-icon {
+            font-size: 48px;
+            color: var(--text-subdued);
+            margin-bottom: 20px;
+        }
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+        .file-input-wrapper input[type=file] {
+            font-size: 100px;
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+        .btn-upload {
+            background-color: var(--text-base);
+            color: black;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 500px;
+            font-weight: bold;
+            font-size: 16px;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+        .btn-upload:hover {
+            transform: scale(1.05);
+            background-color: white;
+        }
+        .file-name-display {
+            font-size: 14px;
+            color: var(--spotify-green);
+            margin-bottom: 20px;
+            font-weight: bold;
+            word-break: break-all;
+        }
+        
+        .status-bar { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background-color: #333; color: white; padding: 12px 24px; border-radius: 500px; font-weight: bold; box-shadow: 0 8px 24px rgba(0,0,0,0.5); z-index: 2000; display: none; transition: opacity 0.3s; }
+        .status-success { background-color: var(--spotify-green); color: black; }
+        .status-error { background-color: #FA243C; color: white; }
+        .status-warning { background-color: #FF9900; color: black;}
+    </style>
+</head>
+<body>
+    <div id="status-bar" class="status-bar">Notification</div>
+
+    <div class="main-container">
+        <div id="mobile-overlay" class="sidebar-overlay" onclick="toggleMobileMenu()"></div>
+        <nav class="sidebar"></nav>
+
+        <main class="main-view">
+            <div class="top-bar">
+                <!-- <div style="display: flex; width: 100%; align-items: center;"> -->
+                <div style="display: flex; flex: 1; min-width: 0; align-items: center;">
+					<button class="mobile-menu-btn" onclick="toggleMobileMenu(event)">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <h2 class="section-title" style="margin: 0; padding-left: 15px;">
+                        <i class="fas fa-mobile-alt" style="color: var(--spotify-green); margin-right: 10px;"></i> Diffuser un fichier
+                    </h2>
+                </div>
+                
+                <!-- <div class="sources-wrapper" id="sources-wrapper" style="max-width: 150px; width: 100%; margin: 0 15px;"></div> -->
+                <div class="remote-wrapper" id="remote-wrapper"></div>
+            </div>
+
+            <p style="color: var(--text-subdued); font-size: 15px; margin-bottom: 20px;">
+                Sélectionnez un fichier audio (MP3, FLAC, M4A, WAV) depuis votre appareil. Il sera lu instantanément sur l'enceinte sélectionnée.
+            </p>
+
+            <div class="upload-container" id="drop-zone">
+                <i class="fas fa-cloud-upload-alt upload-icon"></i>
+                <div class="file-name-display" id="file-name">Aucun fichier sélectionné</div>
+                
+                <div class="file-input-wrapper">
+                    <button class="btn-upload">Choisir un fichier</button>
+                    <input type="file" id="audio-file" accept="audio/*" onchange="updateFileName()">
+                </div>
+                
+                <div style="margin-top: 20px;">
+                    <button class="btn-action btn-action-primary" style="width: auto; padding: 12px 30px; font-size: 16px; background-color: rgba(29, 185, 84, 0.1);" onclick="uploadAndPlay()">
+                        <i class="fas fa-play-circle"></i> Envoyer et Lire
+                    </button>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <footer class="player-bar"></footer>
+
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="js/app.js"></script>
+    <script>
+        function showNotification(msg, type = "warning") {
+            const statusBar = document.getElementById('status-bar');
+            statusBar.innerText = msg;
+            statusBar.className = `status-bar status-${type}`;
+            statusBar.style.display = 'block';
+            setTimeout(() => { statusBar.style.display = 'none'; }, 4000);
+        }
+
+        function updateFileName() {
+            const fileInput = document.getElementById('audio-file');
+            const fileNameDisplay = document.getElementById('file-name');
+            if (fileInput.files.length > 0) {
+                fileNameDisplay.textContent = fileInput.files[0].name;
+            } else {
+                fileNameDisplay.textContent = "Aucun fichier sélectionné";
+            }
+        }
+
+        async function uploadAndPlay() {
+            const fileInput = document.getElementById('audio-file');
+            const file = fileInput.files[0];
+            
+            if (!file) return showNotification("Veuillez d'abord sélectionner un fichier audio.", "error");
+
+            const ips = getSelectedIps(); 
+            if (ips.length === 0) return showNotification("Sélectionnez au moins une enceinte active dans le menu.", "error");
+
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('ips', JSON.stringify(ips));
+
+            showNotification("⏳ Transfert du fichier en cours...", "warning");
+
+            try {
+                const response = await fetch('/api/upload_play', {
+                    method: 'POST',
+                    body: formData 
+                });
+                
+                const data = await response.json();
+                
+                if (data.status === 'ok') {
+                    showNotification("✅ Lecture lancée !", "success");
+                    setTimeout(fetchState, 1500); 
+                } else {
+                    showNotification("❌ " + data.message, "error");
+                }
+            } catch (error) {
+                showNotification("❌ Erreur de transfert avec la box.", "error");
+            }
+        }
+    </script>
+</body>
+</html>

@@ -22,6 +22,7 @@ logs/
 # Fichiers système
 .DS_Store
 Thumbs.db
+.gitignore
 
 # Docker (si tu as des builds locaux non désirés sur git)
 .docker-volume/
@@ -42,6 +43,8 @@ docs/soundcork-stockholm-app/
 docs/*.txt
 tools/install/
 tools/*.xml
+documentation_sources.md
+projet*.MD
 
 # Frontend / Interface web
 www/player.html

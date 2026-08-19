@@ -2,340 +2,52 @@
 
 Ce document détaille l'ensemble des points d'entrée (endpoints) de l'API REST exposée par l'application **sc_tools**.
 
----
-
-## Sommaire
-1. [Contrôle des Enceintes Bose (`soundtouch_bp`)](#1-contrôle-des-enceintes-bose)
-2. [Gestion DLNA & UPnP (`dlna_bp`)](#2-gestion-dlna--upnp)
-3. [Podcasts & Fichiers (`podcast_bp`)](#3-podcasts--fichiers)
-4. [Alarmes & Réveils (`alarm_bp`)](#4-alarmes--réveils)
-5. [Radio France Downloader (`rf_dwl_bp`)](#5-radio-france-downloader)
-6. [Outils & Administration (`tools_bp`)](#6-outils--administration)
 
 ---
 
-## 1. Contrôle des Enceintes Bose
-
-### GET `/api/speakers`
-Retourne la liste et l'état détaillé en temps réel de toutes les enceintes Bose détectées sur le réseau.
-
-* **Méthode** : `GET`
-* **Réponse exemple (200 OK)** :
-```json
-{
-  "192.168.1.50": {
-    "artist": "France Inter",
-    "battery_capable": false,
-    "deviceID": "000C8A112233",
-    "name": "Salon",
-    "playStatus": "PLAY_STATE",
-    "source": "LOCAL_INTERNET_RADIO",
-    "state": "ON",
-    "track": "Le 7/10",
-    "type": "SoundTouch 20",
-    "volume": 20
-  }
-}
-
-```
-
----
-
-### POST `/api/volume`
-
-Ajuste le volume sonore d'une ou plusieurs enceintes.
-
-* **Méthode** : `POST`
-* **Corps de la requête (JSON)** :
-
-```json
-{
-  "ips": ["192.168.1.50"],
-  "volume": 30
-}
-
-```
-
-* **Réponse exemple (200 OK)** : `{"status": "success"}`
-
----
-
-### POST `/api/key`
-
-Simule l'appui sur une touche de la télécommande physique Bose.
-
-* **Méthode** : `POST`
-* **Corps de la requête (JSON)** :
-
-```json
-{
-  "ip": "192.168.1.50",
-  "key": "PRESET_1"
-}
-
-```
-
-* **Touches valides** : `POWER`, `MUTE`, `VOLUME_UP`, `VOLUME_DOWN`, `PRESET_1` à `PRESET_6`, `PLAY`, `PAUSE`, `STOP`, `NEXT_TRACK`, `PREV_TRACK`, `AUX_INPUT`.
-
----
-
-### POST `/api/zone/master`
-
-Crée un groupe Multi-room en définissant une enceinte Master et des enceintes Slaves.
-
-* **Méthode** : `POST`
-* **Corps de la requête (JSON)** :
-
-```json
-{
-  "master_ip": "192.168.1.50",
-  "slaves_ips": ["192.168.1.51"]
-}
-
-```
-
----
-
-## 2. Gestion DLNA & UPnP
-
-### GET `/api/dlna/servers`
-
-Recherche et liste les serveurs multimédia DLNA actifs sur le réseau via SSDP.
-
-* **Méthode** : `GET`
-* **Réponse exemple (200 OK)** :
-
-```json
-[
-  {
-    "name": "Synology DiskStation",
-    "udn": "uuid:12345678-1234-1234-1234-123456789abc"
-  }
-]
-
-```
-
----
-
-### GET `/api/dlna/browse`
-
-Parcourt le contenu d'un dossier DLNA spécifique.
-
-* **Méthode** : `GET`
-* **Paramètres URL** :
-* `udn` : UDN du serveur DLNA.
-* `id` : ID de l'objet/dossier à parcourir (défaut : `"0"` pour la racine).
-
-
-
----
-
-### POST `/api/dlna/search`
-
-Effectue une recherche de fichiers audio sur le serveur DLNA.
-
-* **Méthode** : `POST`
-* **Corps de la requête (JSON)** :
-
-```json
-{
-  "udn": "uuid:12345678-1234-1234-1234-123456789abc",
-  "query": "Daft Punk",
-  "type": "all"
-}
-
-```
-
----
-
-### GET `/api/dlna/stream`
-
-Proxy de streaming audio pour relayer le fichier multimédia du serveur DLNA vers l'enceinte Bose.
-
-* **Méthode** : `GET`
-* **Paramètres URL** :
-* `url` : URL directe du fichier sur le serveur DLNA.
-
-
-
----
-
-### POST `/api/queue/play`
-
-Définit et lance une nouvelle file d'attente de lecture sur les enceintes ciblées.
-
-* **Méthode** : `POST`
-* **Corps de la requête (JSON)** :
-
-```json
-{
-  "ips": ["192.168.1.50"],
-  "tracks": [
-    {
-      "title": "Track 1",
-      "artist": "Artist A",
-      "album": "Album X",
-      "url": "[http://192.168.1.100:50001/music/1.mp3](http://192.168.1.100:50001/music/1.mp3)",
-      "cover": "[http://192.168.1.100:50001/cover/1.jpg](http://192.168.1.100:50001/cover/1.jpg)"
-    }
-  ],
-  "index": 0
-}
-
-```
-
----
-
-## 3. Podcasts & Fichiers
-
-### GET `/api/podcasts/search`
-
-Recherche des épisodes de podcasts via l'API iTunes / Apple Podcasts.
-
-* **Méthode** : `GET`
-* **Paramètres URL** :
-* `q` : Terme de recherche.
-* `country` : Code pays (par défaut : `"fr"`).
-
-
-
----
-
-### POST `/api/play_podcast`
-
-Déclenche la lecture d'un podcast externe sur les enceintes cibles.
-
-* **Méthode** : `POST`
-* **Corps de la requête (JSON)** :
-
-```json
-{
-  "ips": ["192.168.1.50"],
-  "name": "Affaires Sensibles",
-  "url": "[https://podcasts.radiofrance.fr/](https://podcasts.radiofrance.fr/)..."
-}
-
-```
-
----
-
-### POST `/api/upload_play`
-
-Téléverse un fichier audio local (MP3, AAC) et le diffuse immédiatement sur les enceintes sélectionnées.
-
-* **Méthode** : `POST` (`multipart/form-data`)
-* **Champs** :
-* `file` : Fichier binaire audio.
-* `ips` : Tableau JSON sérialisé d'IPs d'enceintes (ex: `["192.168.1.50"]`).
-
-
-
----
-
-## 4. Alarmes & Réveils
-
-### GET `/api/alarms`
-
-Récupère la liste de toutes les alarmes programmées.
-
-* **Méthode** : `GET`
-* **Réponse exemple (200 OK)** :
-
-```json
-[
-  {
-    "ip": "192.168.1.50",
-    "hour": 7,
-    "minute": 0,
-    "days": "1,2,3,4,5",
-    "preset": "PRESET_1"
-  }
-]
-
-```
-
----
-
-### POST `/api/alarms`
-
-Ajoute une nouvelle alarme programmée.
-
-* **Méthode** : `POST`
-* **Corps de la requête (JSON)** :
-
-```json
-{
-  "ip": "192.168.1.50",
-  "hour": 7,
-  "minute": 15,
-  "days": "1,2,3,4,5",
-  "preset": "PRESET_1"
-}
-
-```
-
----
-
-### DELETE `/api/alarms`
-
-Supprime une alarme par son index dans la liste.
-
-* **Méthode** : `DELETE`
-* **Paramètres URL** :
-* `index` : Index numérique (ex: `0`).
-
-
-
----
-
-## 5. Radio France Downloader
-
-### GET `/api/rf/shows`
-
-Recherche une émission de radio sur la plateforme Radio France.
-
-* **Méthode** : `GET`
-* **Paramètres URL** :
-* `query` : Mots-clés.
-* `station` : Code station (optionnel, ex: `FRANCEINTER`, `FRANCECULTURE`).
-
-
-
----
-
-### POST `/api/rf/download`
-
-Planifie le téléchargement des $N$ derniers épisodes d'une émission en arrière-plan.
-
-* **Méthode** : `POST`
-* **Paramètres URL** :
-* `show_url` : URL de l'émission Radio France.
-* `latest_n` : Nombre d'épisodes à télécharger (défaut : 1).
-
-
-
----
-
-### GET `/api/rf/downloads`
-
-Liste l'ensemble des podcasts Radio France déjà téléchargés localement sur le disque.
-
-* **Méthode** : `GET`
-
----
-
-## 6. Outils & Administration
-
-### GET `/api/tools/network_info`
-
-Retourne la configuration réseau du serveur hôte (IP, sous-réseau, adresses MAC).
-
-* **Méthode** : `GET`
-
----
-
-### POST `/api/tools/rescan`
-
-Relance un balayage complet du réseau local pour redécouvrir les enceintes Bose et les serveurs DLNA.
-
-* **Méthode** : `POST`
+## Contrôle des Enceintes Bose
+
+Voici la documentation de l'architecture et du rôle de chaque API du projet SC_TOOLS, structurée par modules (Blueprints Flask) pour garantir la séparation des responsabilités.
+### 1. Module principal "SoundTouch" (Gestion matérielle et contrôle)
+Ce module s'occupe de la communication avec les enceintes Bose, de la récupération d'état, et de la simulation des touches.
+* **`GET /api/data`** : Retourne toutes les données globales, incluant l'état de toutes les enceintes découvertes, les presets, et la liste des webradios enregistrées. Cette route initie également un téléchargement en tâche de fond (lazy healing) pour les logos manquants.
+* **`POST /api/poll`** : Force le rafraîchissement manuel de l'état d'une enceinte spécifique (via requête HTTP) et relance l'écoute de son flux WebSocket.
+* **`POST /api/create_zone`** : Crée une zone de lecture multiroom synchronisée en définissant une enceinte "maître" et des enceintes "membres".
+* **`POST /api/create_stereo`** : Jumelle 2 enceintes ST10 en stéréo.
+* **`POST /api/play_preset`** : Joue un preset configuré (1 à 6) sur les enceintes ciblées en envoyant une commande XML native.
+
+### 2. Module "Alarmes" (Gestion des réveils)
+Gère la planification et le déclenchement musical programmé.
+* **`GET /api/alarms`** : Lit et retourne la liste des alarmes configurées depuis un fichier JSON.
+* **`POST /api/alarms`** : Crée une nouvelle alarme, l'enregistre, et la synchronise en mémoire avec le planificateur `APScheduler`.
+* **`DELETE /api/alarms`** : Supprime une alarme spécifique de la base de données via son index et met à jour le planificateur.
+
+### 3. Module "DLNA" (Le contournement de l'erreur 1614 et proxy)
+Ce blueprint s'occupe de la navigation dans la bibliothèque musicale et du routage audio avancé.
+* **`GET /api/dlna/servers`** : Lance une détection SSDP sur le réseau local pour découvrir les serveurs DLNA/UPnP disponibles.
+* **`GET /api/dlna/browse` & `POST /api/dlna/search**` : Permettent de lister le contenu d'un dossier DLNA ou de lancer une requête de recherche native (titre, artiste, album) sur le serveur UPnP local.
+* **`/api/dlna/stream`** : Il s'agit du proxy audio. Il aspire les flux externes et les redistribue pour contourner les limitations de l'enceinte.
+* **`POST /api/queue/play`**, **`POST /api/queue/control`**, **`GET /api/queue/status`** : Ces routes gèrent un lecteur musical virtuel (file d'attente locale). Elles gèrent la piste en cours, l'index, le mode aléatoire et la répétition lorsque l'audio passe par le proxy.
+* **`GET /api/upnp/servers`**, **`POST /api/upnp/navigate`**, **`POST /api/upnp/search`** : Des requêtes similaires aux routes DLNA, mais communiquant de manière directe avec le NAS ou via l'API native `listMediaServers` de Bose.
+* **`POST /api/upnp/play`** : Implémente le "Smart Skipper". Cette API déclenche la lecture UPNP d'un dossier entier pour éviter un crash Bose (Erreur 1614), puis simule programmatiquement plusieurs appuis sur "Suivant" pour atteindre la piste voulue et garantir une lecture Gapless.
+
+### 4. Module "Podcasts" (Intégration locale et Apple)
+Permet de rechercher et de lire des diffusions asynchrones.
+* **`GET /api/podcasts/search`** : Interroge l'API Apple iTunes Podcasts pour trouver des émissions.
+* **`POST /api/play_podcast`** : Télécharge un podcast depuis l'URL fournie vers un fichier local temporaire (`podcast.mp3`) et initie sa lecture via l'URL proxy.
+* **`GET /api/local_rf_downloads`** : Liste tous les podcasts de Radio France déjà téléchargés et stockés localement sur le Raspberry.
+* **`POST /api/play_local_rf`** : Commence la lecture d'un fichier mp3 Radio France localement stocké via le Hack Orion.
+* **`POST /api/delete_local_rf`** : Efface physiquement un fichier podcast local de l'espace de stockage.
+
+### 5. Module "Radios" (Webradios & Métadonnées)
+Gère l'accès aux stations externes et aux métadonnées.
+* **`GET /api/radios/search`** : Effectue une recherche de webradios via l'API communautaire "Radio-Browser".
+* **`POST /api/play_radio`** : Démarre la diffusion d'une radio spécifiée par son UUID "Radio-Browser" directement sur l'enceinte Bose.
+* **`POST /api/radios/save`** : Sauvegarde la liste personnalisée des radios (favoris) dans un fichier pour persistance.
+* **`GET /api/radios/rf_test`** : Interroge l'API GraphQL officielle de Radio France pour récupérer les métadonnées (titre et description) de l'émission diffusée en temps réel.
+
+### 6. Module "Radio France Downloader" (Aspiration asynchrone)
+Spécialisé dans le téléchargement natif de podcasts Radio France via leur API.
+* **`GET /api/rf/config-check`** : Confirme que la clé de l'API Radio France est configurée et que le dossier d'enregistrement est accessible.
+* **`GET /api/rf/shows`** : Cherche et retourne la liste des émissions disponibles chez Radio France à partir d'un mot-clé ou d'une station spécifique.
+* **`POST /api/rf/download`** : Déclenche le téléchargement du (ou des) dernier(s) épisode(s) d'une émission ciblée. Le téléchargement s'exécute silencieusement en arrière-plan via un `Thread` Python pour ne pas bloquer l'application.

@@ -23,6 +23,10 @@ logs/
 .DS_Store
 Thumbs.db
 .gitignore
+*.txt
+*.zip
+*.7z
+*.gz
 
 # Docker (si tu as des builds locaux non désirés sur git)
 .docker-volume/

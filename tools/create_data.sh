@@ -19,8 +19,8 @@ BASE_RESEAU="${IP_RACINE}."
 
 mkdir -p "$BASE_DIR"
 
-# Options SSH pour forcer la connexion aux vieux serveurs Bose et éviter les blocages en sous-shell
-SSH_OPTS="-o HostKeyAlgorithms=+ssh-rsa,ssh-dss -o PubkeyAcceptedKeyTypes=+ssh-rsa -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o BatchMode=yes -o LogLevel=ERROR -o ConnectTimeout=2"
+# Options SSH validées pour les serveurs Bose SoundTouch
+SSH_OPTS="-o HostKeyAlgorithms=ssh-rsa -o PubkeyAcceptedAlgorithms=ssh-rsa -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o BatchMode=yes -o ConnectTimeout=3 -o LogLevel=ERROR"
 
 # ---------- 2. Fonction de traitement ----------
 process_device() {
@@ -121,12 +121,13 @@ for s in {1..254}; do
 
 done
 
+echo "🏁 Scan et création de l'arborescence terminés sur $BASE_DIR."
+
 # Si aucun fichier Sources.xml n'a été créé pendant le scan
 if ! find "$BASE_DIR" -type f -name "Sources.xml" -print -quit >/dev/null 2>&1; then
+    echo ""
     echo "⚠️ Aucun fichier Sources.xml trouvé."
     echo "  ️  Il faut rooter, même de façon provisoire, une enceinte en utilisant"
     echo "  ️    - Le script ~/sc-tools/tools/rootST.sh <SuffixeIP> de l'enceinte la plus utilisée."
     echo "  ️    - La clé USB fat32 avec un fichier vierge remote_services pour celà utiliser ~/sc-tools/tools/create_remote_services.sh."
 fi
-
-echo "🏁 Scan et création de l'arborescence terminés sur $BASE_DIR."

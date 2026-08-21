@@ -30,9 +30,10 @@ permanent=${2:-non}
 PORT_APP=17000
 PORT_SSH=22
 ENV_FILE="/home/pi/sc_tools/.env"
-SSH_OPTS="-o ConnectTimeout=5 \
-          -o BatchMode=yes \
-          -o StrictHostKeyChecking=accept-new"
+
+# Options SSH validées pour les serveurs Bose SoundTouch
+SSH_OPTS="-o HostKeyAlgorithms=ssh-rsa -o PubkeyAcceptedAlgorithms=ssh-rsa -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o BatchMode=yes -o ConnectTimeout=3 -o LogLevel=ERROR"
+
 		  
 if nc -z -w 2 "$IP" "$PORT_SSH" > /dev/null 2>&1; then
     echo "Inutile $IP déjà rootée"
@@ -81,10 +82,10 @@ spinner() {
     printf "\r \r"
 }
 
-ssh_key() {
-	ssh-keygen -F "$IP" >/dev/null || \
-		ssh-keyscan -H "$IP" >> ~/.ssh/known_hosts
-}
+# ssh_key() {
+	# ssh-keygen -F "$IP" >/dev/null || \
+		# ssh-keyscan -H "$IP" >> ~/.ssh/known_hosts
+# }
 
 send_cmd() {
     printf '%s\n' "$1" | nc -w 2 "$IP" "$PORT_APP"
@@ -143,7 +144,7 @@ else
     echo "[INFO] Le port SSH est joignable, aucun redémarrage nécessaire."
 fi
 
-ssh_key
+# ssh_key
 ssh $SSH_OPTS root@"$IP" cat /mnt/nv/BoseApp-Persistence/1/Sources.xml > "$SOURCES"
 
 spinner 20

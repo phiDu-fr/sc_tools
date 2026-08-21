@@ -1,6 +1,18 @@
 #!/bin/bash
 # Script d'initialisation de la configuration SoundCork / sc_tools
 
+echo "=== Clonage des dépôts ==="
+cd $HOME
+rm -rf soundcork
+rm -rf sc_tools
+rm -rf sc_music
+rm -rf sc_virtual
+
+git clone https://github.com/deborahgu/soundcork.git
+git clone https://github.com/phiDu-fr/sc_tools.git
+git clone https://github.com/phiDu-fr/sc_music.git
+git clone https://github.com/phiDu-fr/sc_virtual.git
+
 echo "=== Démarrage de l'initialisation ==="
 
 # 1. Récupération de l'IPV4 de la machine (<ValeurIP>)
@@ -76,6 +88,8 @@ if [ -f "${TMP_DIR}/found_xml" ]; then
     echo "[OK] margeAccountUUID extrait : $val_margeAccountUUID"
 else
     echo "[Erreur] Aucune enceinte ne répond sur $SUBNET.1 à $SUBNET.254."
+    echo "         Vérifier que les enceintes soient toutes branchées sur le secteur, raccordées au réseau Wifi ou filaire."
+    echo "         Puis relancer $0."
 fi
 
 # Nettoyage
@@ -99,3 +113,4 @@ else
 fi
 
 echo "=== Initialisation terminée ==="
+

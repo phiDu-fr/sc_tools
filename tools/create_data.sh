@@ -19,6 +19,9 @@ BASE_RESEAU="${IP_RACINE}."
 
 mkdir -p "$BASE_DIR"
 
+# Options SSH pour forcer la connexion aux vieux serveurs Bose et éviter les blocages en sous-shell
+SSH_OPTS="-o HostKeyAlgorithms=+ssh-rsa,ssh-dss -o PubkeyAcceptedKeyTypes=+ssh-rsa -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o BatchMode=yes -o LogLevel=ERROR -o ConnectTimeout=2"
+
 # ---------- 2. Fonction de traitement ----------
 process_device() {
 
@@ -74,25 +77,30 @@ process_device() {
 
             done
 			
-			if nc -z -w 2 ${ip_xml} "22" > /dev/null 2>&1; then
-				ssh-keyscan -H ${ip_xml} >> ~/.ssh/known_hosts
-				SOURCES="$BASE_DIR/$compte/Sources.xml"
-				ssh  root@${ip_xml} cat /mnt/nv/BoseApp-Persistence/1/Sources.xml > $SOURCES
+            # ---------- Modification via SSH ----------
+            if nc -z -w 2 "${ip_xml}" "22" > /dev/null 2>&1; then
+                local SOURCES_XML="$BASE_DIR/$compte/Sources.xml"
+                
+                # Connexion SSH avec les options adaptées
+                if ssh $SSH_OPTS root@"${ip_xml}" cat /mnt/nv/BoseApp-Persistence/1/Sources.xml > "$SOURCES_XML" 2>/dev/null; then
 			
-			BLOCK='<sourceItem source="RADIO_BROWSER" status="READY" isLocal="false" multiroomallowed="true"/>'
+                    local BLOCK='<sourceItem source="RADIO_BROWSER" status="READY" isLocal="false" multiroomallowed="true"/>'
 
-				# Vérifie si RADIO_BROWSER existe déjà
-				if ! grep -q 'type="RADIO_BROWSER"' "$SOURCES"; then
-					# Insère le bloc avant </sources>
-					sed -i "/<\/sources>/i\\
-				$BLOCK
-				" "$SOURCES"
+                    # Vérifie si RADIO_BROWSER existe déjà
+                    if ! grep -q 'type="RADIO_BROWSER"' "$SOURCES_XML"; then
+                        # Insère le bloc avant </sources>
+                        sed -i "/<\/sources>/i\\
+                    $BLOCK
+                    " "$SOURCES_XML"
 
-					echo "Bloc RADIO_BROWSER ajouté."
-				else
-					echo "Bloc RADIO_BROWSER déjà présent."
-				fi
-			fi
+                        echo "Bloc RADIO_BROWSER ajouté pour $nom."
+                    else
+                        echo "Bloc RADIO_BROWSER déjà présent pour $nom."
+                    fi
+                else
+                    echo "🔴 ÉCHEC SSH : Impossible de récupérer Sources.xml sur $ip_xml"
+                fi
+            fi
         else
             rm -f "$temp_xml"
         fi
@@ -113,29 +121,12 @@ for s in {1..254}; do
 
 done
 
-wait
-# ---------- 4. fichier Sources.xml ----------
+# Si aucun fichier Sources.xml n'a été créé pendant le scan
 if ! find "$BASE_DIR" -type f -name "Sources.xml" -print -quit >/dev/null 2>&1; then
-    cat <<'EOF' >"$SOURCES"
-<?xml version='1.0' encoding='UTF-8'?>
-<sources>
-    <source id="100001" displayName="AUX IN" secret="" secretType="">
-        <sourceKey type="AUX" account="AUX" />
-        <createdOn />
-        <updatedOn />
-    </source>
-    <source id="100002" displayName="" secret="" secretType="token">
-        <sourceKey type="INTERNET_RADIO" account="" />
-        <createdOn />
-        <updatedOn />
-    </source>
-    <source id="100003" displayName="" secret="" secretType="">
-        <sourceKey type="RADIO_BROWSER" account="" />
-        <createdOn />
-        <updatedOn />
-    </source>
-</sources>
-EOF
+    echo "⚠️ Aucun fichier Sources.xml trouvé."
+    echo "  ️  Il faut rooter, même de façon provisoire, une enceinte en utilisant"
+    echo "  ️    - Le script ~/sc-tools/tools/rootST.sh <SuffixeIP> de l'enceinte la plus utilisée."
+    echo "  ️    - La clé USB fat32 avec un fichier vierge remote_services pour celà utiliser ~/sc-tools/tools/create_remote_services.sh."
 fi
 
 echo "🏁 Scan et création de l'arborescence terminés sur $BASE_DIR."

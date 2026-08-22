@@ -11,18 +11,18 @@ L'application repose sur une architecture hybride **Flask / Eventlet (Socket.IO)
 ```text
   ┌─────────────────────────────────────────────────────────┐
   │                 Interface Client (Web)                  │
-  │     (Desktop Browser, Smartphone, Tablette - Port 80)    │
+  │     (Desktop Browser, Smartphone, Tablette - Port 80)   │
   └───────────▲─────────────────────────────────▲───────────┘
               │ WebSocket / Socket.IO           │ HTTP REST
               ▼                                 ▼
   ┌─────────────────────────────────────────────────────────┐
   │                    Serveur Flask / App                  │
   │  ┌───────────────────────────────────────────────────┐  │
-  │  │ Shared State (speakers, server_queues, scheduler)  │  │
+  │  │ Shared State (speakers, server_queues, scheduler) │  │
   │  └───────────────────────────────────────────────────┘  │
   │                                                         │
   │  [Blueprints Flask]                                     │
-  │  ├── soundtouch_bp  <--->  Bose HTTP REST API (8090)     │
+  │  ├── soundtouch_bp  <--->  Bose HTTP REST API (8090)    │
   │  ├── dlna_bp        <--->  UPnP/SSDP & Proxy Stream     │
   │  ├── alarm_bp       <--->  APScheduler Cron Jobs        │
   │  ├── podcast_bp     <--->  iTunes API & Local Storage   │

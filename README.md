@@ -82,7 +82,7 @@ L'application agit comme un hub multimédia permettant le contrôle multi-room, 
 │   ├── tools.py                   # Fonctions d'administration réseau & outils de diagnostic
 │   ├── update_radio_logo.py       # Script d'actualisation des logos radios
 │   ├── utils.py                   # Utilitaires réseau (obtention IP locale, etc.)
-│   └── virtual_soundtouch.py      # Émulateur/Virtualiseur d'enceinte SoundTouch
+│   └── virtual_soundtouch.py      # Émulateur/Virtualiseur d'enceinte SoundTouch (sc_virtual)
 ├── docker-compose.yml             # Orchestration du conteneur Docker
 ├── Dockerfile                     # Image Docker multi-arch (ARM / x86)
 ├── tools                          # Dossiers contenant de nombreux programmes liés à l'écosystème SoundTouch/Raspberry pi
@@ -205,8 +205,8 @@ Pour utiliser le moteur de recherche d'émissions et le téléchargeur Radio Fra
 ## 🚀 Utilisation
 
 1. **Partie gauche (`sidebar`)** : Visualiser toutes les enceintes Bose détectées sur le réseau local, leur état (en marche, éteinte, standby), ajuster le volume individuel, et contrôler la lecture, créer des groupes (multiroom), donne l'état des batteries si..., accès aux autres fonctionnalités.
-2. **Pied de page (`footbar`)** : Visualiser le moreceau ou la radio qui passe actuellement, barre de volume.
-3. **Webradios (`radios.html`)** : Gestion des webradios, recherche dans la boîte de recherche et lecture, possiblilité de l'enregistrer dans les favoris ou de supprimer des favoris.
+2. **Pied de page (`footbar`)** : Visualiser le morceau ou la radio qui passe actuellement, barre de volume.
+3. **Webradios (`radios.html`)** : Gestion des webradios, recherche dans la boîte de recherche et lecture, possibilité de l'enregistrer dans les favoris ou de supprimer des favoris.
 4. **Podcasts (`podcasts.html`)** : Gestion des podcasts, recherche via l'API iTunes, ou via le bouton `Ouvrir le téléchargement Radio France`.
 5. **Diffusion réseau (`dlna_browser.html`)** : Minidlna implémenté dans ce système ou autre DLNA/UPNP découvert par les enceintes (doit être reconnu dans le fichier Sources.xml), utiliser `tools/py/auto_add_sources.py`.
 6. **Musique enregistrer (`dlna_browser.html`)** : afin de lire de la musique depuis un support connecté sur le Raspberry ou le présent serveur.
@@ -214,13 +214,13 @@ Pour utiliser le moteur de recherche d'émissions et le téléchargeur Radio Fra
 8. **Télécommande (`remote.html`)** : Télécommande Bose Soundtouch.
 9. **Réveil (`alarm.html`)** : Faire de votre enceinte un radio réveil : choix de l'enceinte, choix du préréglage, heure et jours d'activation.
 10. **Configuration (`config.html`)** : changer les paramètres du l'enceinte sélectionnée.
-11. **Administration (`tools`)** : De nombreux utilistaire pour gérer l'écosystème, directement depuis l'interface web.
+11. **Administration (`tools`)** : De nombreux utilitaires pour gérer l'écosystème, directement depuis l'interface web.
 
 
 
 ---
 
-## 🚀 Quelques fonctionnamitées
+## 🚀 Quelques fonctionnalités
 
 1. **Multiroom** En mode ordinateur : Dans le sidebar sélectionner l'enceinte maître puis Ctrl + clic sur les autres enceintes participantes, enfin clic sur `Grouper`.
 2. **Multiroom** En mode smartphone : Dans le sidebar sélectionner l'enceinte maître puis appui long sur la 2ème enceinte participante, appui sur les suivantes, enfin appui sur `Grouper`.

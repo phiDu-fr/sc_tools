@@ -19,9 +19,9 @@ from dlna import play_next_in_queue
 soundtouch_bp = Blueprint('soundtouch_bp', __name__)
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
-LOGOS_DIR = '/app/www/img/radios'
-WEB_LOGO_DIR = '/www/img/radios'
-GENERIC_LOGO = 'FA_ICON'
+LOGOS_DIR = '/app/www/img/radios' 
+WEB_LOGO_DIR = '/www/img/radios'  
+GENERIC_LOGO = 'FA_ICON'          
 LOGOS_CACHE_FILE = '/app/tools_data/radio_logos_cache.json'
 CUSTOM_LOGOS_FILE = '/app/tools_data/custom_logos.json'
 
@@ -271,7 +271,6 @@ def parse_device_info():
     st_log("[SoundCork] Synchronisation de l'administration...")
     if not hasattr(shared, 'speakers'): shared.speakers = {}
     found_devices = {}
-    account_id = None
     
     try:
         port = getattr(shared, 'SOUNDCORK_PORT', 8000)
@@ -280,15 +279,6 @@ def parse_device_info():
         
         if resp.status_code == 200:
             html = resp.text
-            
-            # --- Extraction du compte intégrée ici ---
-            account_match = re.search(r'<h2>\s*Account\s+(\d+)\s*</h2>', html, re.IGNORECASE)
-            if account_match:
-                account_id = account_match.group(1)
-                st_log(f"[SoundCork] Account ID extrait : {account_id}")
-            else:
-                st_log("[SoundCork] AVERTISSEMENT : Account ID introuvable dans la page.")
-
             pattern = re.compile(r'/admin/edit_device/([A-Fa-f0-9]+)[^>]*>.*?</td>\s*<td>\s*([0-9\.]+)\s*</td>\s*<td>\s*([^<]+?)\s*</td>', re.IGNORECASE)
             matches = pattern.findall(html)
             
@@ -331,23 +321,21 @@ def parse_device_info():
 
     # --- Identification des modèles via le endpoint /full ---
     try:
-        if not account_id:
-            st_log("[SoundCork] Impossible de requêter /full (Account ID manquant).")
-        else:
-            port = getattr(shared, 'SOUNDCORK_PORT', 8000)
-            url_full = f"http://127.0.0.1:{port}/marge/streaming/account/{account_id}/full"
-            resp_full = requests.get(url_full, timeout=10.0)
-            
-            if resp_full.status_code == 200:
-                root_full = ET.fromstring(resp_full.content)
-                for device in root_full.findall('.//device'):
-                    ip = device.findtext('ipaddress')
-                    product_node = device.find('attachedProduct')
-                    
-                    if ip and ip in shared.speakers and product_node is not None:
-                        product_code = product_node.attrib.get('product_code', '')
-                        shared.speakers[ip]['is_st10'] = ('SoundTouch 10' in product_code)
-                        shared.speakers[ip]['is_virtual'] = ('SoundTouch Virtual' in product_code)
+        port = getattr(shared, 'SOUNDCORK_PORT', 8000)
+        account_id = os.environ.get('BOSE_ACCOUNT_ID', '5476586')
+        url_full = f"http://127.0.0.1:{port}/marge/streaming/account/{account_id}/full"
+        resp_full = requests.get(url_full, timeout=10.0)
+        
+        if resp_full.status_code == 200:
+            root_full = ET.fromstring(resp_full.content)
+            for device in root_full.findall('.//device'):
+                ip = device.findtext('ipaddress')
+                product_node = device.find('attachedProduct')
+                
+                if ip and ip in shared.speakers and product_node is not None:
+                    product_code = product_node.attrib.get('product_code', '')
+                    shared.speakers[ip]['is_st10'] = ('SoundTouch 10' in product_code)
+                    shared.speakers[ip]['is_virtual'] = ('SoundTouch Virtual' in product_code)
                     
     except Exception as e:
         st_log(f"[SoundCork] Erreur récupération du type d'enceintes via /full : {e}")
@@ -585,7 +573,7 @@ def update_speaker_state(ip):
                     if not art_url or art_url.strip() == "" or "SHOW_DEFAULT_IMAGE" in str(art_url):
                         art_url = "/www/img/generic-cover.jpg"
                         current_track['cover'] = art_url
-                    spk['cover'] = art_url  
+                    spk['cover'] = art_url    
                     if spk['elapsed'] > spk['total']: spk['elapsed'] = spk['total']
                     
         except Exception:
@@ -757,7 +745,135 @@ def create_stereo():
     </group>"""
     try:
         requests.post(f"http://{master_ip}:8090/setGroup", data=xml_data.encode('utf-8'), headers={'Content-Type': 'application/xml'}, timeout=10.0)
-    except Exception as e:
-        return jsonify({"status": "error", "message": str(e)})
-
+    except Exception:
+        pass
+        
     return jsonify({"status": "success"})
+
+@soundtouch_bp.route('/api/remove_stereo', methods=['POST'])
+def remove_stereo():
+    data = request.json
+    ip = data.get('ip')
+    if not ip:
+        return jsonify({"status": "error"})
+        
+    try:
+        requests.post(f"http://{ip}:8090/removeGroup", data="<removeGroup/>".encode('utf-8'), headers={'Content-Type': 'application/xml'}, timeout=10.0)
+        
+        if ip in shared.speakers:
+            shared.speakers[ip]['is_stereo_master'] = False
+            
+        for s_ip, s_data in shared.speakers.items():
+            if s_data.get('is_stereo_slave'):
+                s_data['is_stereo_slave'] = False
+                s_data['state'] = 'OFF' 
+    except Exception:
+        pass
+        
+    return jsonify({"status": "success"})
+
+@soundtouch_bp.route('/api/play_preset', methods=['POST'])
+def play_preset():
+    data = request.json
+    preset_id = data.get('preset_id')
+    for ip in data.get('ips', []):
+        if ip in shared.server_queues:
+            shared.server_queues[ip] = {}
+        try: requests.post(f"http://{ip}:8090/key", data=f'<key state="release" sender="Gabbo">PRESET_{preset_id}</key>', headers={"Content-Type": "application/xml"}, timeout=5.0)
+        except: pass
+    return jsonify({"status": "ok"})
+
+@soundtouch_bp.route('/api/key', methods=['POST'])
+def send_key():
+    data = request.json
+    ips = data.get('ips', [])
+    key_name = data.get('key')
+    key_state = data.get('state', 'both')  
+    
+    for ip in ips:
+        queue = shared.server_queues.get(ip) if hasattr(shared, 'server_queues') else None
+        
+        is_proxy_mode = False
+        if queue and queue.get('tracks'):
+            try:
+                r = requests.get(f"http://{ip}:8090/nowPlaying", timeout=5.0)
+                if r.status_code == 200:
+                    true_source = ET.fromstring(r.content).attrib.get('source')
+                    if true_source in ["LOCAL_INTERNET_RADIO", "INVALID_SOURCE"]:
+                        is_proxy_mode = True
+            except:
+                pass
+
+        if is_proxy_mode and key_name in ['NEXT_TRACK', 'PREV_TRACK', 'SHUFFLE_ON', 'SHUFFLE_OFF', 'REPEAT_ALL', 'REPEAT_ONE', 'REPEAT_OFF']:
+            if key_state in ['press', 'both']:
+                from dlna import play_next_in_queue, play_prev_in_queue, set_queue_shuffle, set_queue_repeat
+                try:
+                    if key_name == 'NEXT_TRACK': play_next_in_queue(ip)
+                    elif key_name == 'PREV_TRACK': play_prev_in_queue(ip)
+                    elif key_name.startswith('SHUFFLE'): set_queue_shuffle(ip, key_name)
+                    elif key_name.startswith('REPEAT'): set_queue_repeat(ip, key_name)
+                except Exception:
+                    pass
+        else:
+            try:
+                if key_state in ['press', 'both']:
+                    xml_press = f'<key state="press" sender="Gabbo">{key_name}</key>'
+                    requests.post(f"http://{ip}:8090/key", data=xml_press.encode('utf-8'), headers={"Content-Type": "application/xml"}, timeout=5.0)
+                if key_state in ['release', 'both']:
+                    xml_release = f'<key state="release" sender="Gabbo">{key_name}</key>'
+                    requests.post(f"http://{ip}:8090/key", data=xml_release.encode('utf-8'), headers={"Content-Type": "application/xml"}, timeout=5.0)
+            except Exception:
+                pass
+            
+    time.sleep(0.5)
+    for ip in ips: 
+        if not shared.speakers.get(ip, {}).get('is_stereo_slave'):
+            threading.Thread(target=update_speaker_state, args=(ip,), daemon=True).start()
+            
+    return jsonify({"status": "success"})
+    
+@soundtouch_bp.route('/api/volume', methods=['POST'])
+def set_volume():
+    data = request.json
+    vol = data.get("volume")
+    ips = data.get('ips', [])
+    
+    for ip in ips:
+        try:
+            xml_data = f'<volume>{vol}</volume>'
+            requests.post(f"http://{ip}:8090/volume", data=xml_data.encode('utf-8'), headers={"Content-Type": "text/xml; charset=utf-8"}, timeout=5.0)
+        except Exception:
+            pass
+            
+    time.sleep(0.5)
+    for ip in ips: 
+        if not shared.speakers.get(ip, {}).get('is_stereo_slave'):
+            threading.Thread(target=update_speaker_state, args=(ip,), daemon=True).start()
+            
+    return jsonify({"status": "success"})
+
+@soundtouch_bp.route('/api/select_source', methods=['POST'])
+def select_source():
+    data = request.json
+    ip = data.get('ip')
+    source = data.get('source') 
+    
+    if source == "AUX":
+        xml_data = '<ContentItem source="AUX" sourceAccount="AUX"><itemName>AUX IN</itemName></ContentItem>'
+    elif source == "HDMI_1":
+        xml_data = '<ContentItem source="PRODUCT" sourceAccount="HDMI_1"><itemName>HDMI_1</itemName></ContentItem>'
+    elif source == "TV":
+        xml_data = '<ContentItem source="PRODUCT" sourceAccount="TV"><itemName>TV</itemName></ContentItem>'
+    elif source == "BLUETOOTH":
+        xml_data = '<ContentItem source="BLUETOOTH" sourceAccount="BLUETOOTH"><itemName>BLUETOOTH</itemName></ContentItem>'
+    else:
+        return jsonify({"status": "error", "message": "Source inconnue"}), 400
+
+    try:
+        requests.post(f"http://{ip}:8090/select", data=xml_data.encode('utf-8'), 
+                      headers={"Content-Type": "text/xml; charset=utf-8"}, timeout=10.0)
+        return jsonify({"status": "ok"})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+threading.Thread(target=background_tasks, daemon=True).start()

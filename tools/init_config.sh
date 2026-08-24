@@ -1,6 +1,7 @@
 #!/bin/bash
 # Script d'initialisation de la configuration SoundCork / sc_tools
 
+echo "=+=+=+ Démarrage de la configuration de base +=+=+="
 echo "=== Clonage des dépôts ==="
 cd $HOME
 rm -rf soundcork
@@ -112,5 +113,33 @@ else
     echo "[Erreur] Fichier $ENV_FILE introuvable pour la configuration finale."
 fi
 
-echo "=== Initialisation terminée ==="
+echo "=== Création de la base de données Soundcork ==="
+rm -rf /home/pi/soundcork/data
+rm -rf /home/pi/soundcork/dataX
+$HOME/sc_tools/tools/create_data.sh
+$HOME/sc_tools/tools/control_data.sh
+# Capture immédiate du code de retour du script enfant
+STATUS=$?
 
+# Traitement de l'état de sortie
+if [ $STATUS -eq 0 ]; then
+    echo "[SUCCÈS] Le fichier INI est généré et les enceintes sont synchronisées sur le même UUID."
+	mv /home/pi/soundcork/dataX /home/pi/soundcork/data
+	echo "=== Fin création de la base de données Soundcork ==="
+	echo "=+=+=+ Fin de la configuration de base +=+=+="
+elif [ $STATUS -eq 1 ]; then
+	echo "=== Création de la base de données Soundcork interropue ==="
+    echo "[ERREUR CRITIQUE] Impossible d'accéder au répertoire dataX. Arrêt de init.sh."
+    exit 1
+elif [ $STATUS -eq 2 ]; then
+	echo "=== Création de la base de données Soundcork interropue ==="
+    echo "[AVERTISSEMENT] Conflit détecté : Plusieurs margeAccountUUID sont présents."
+    echo "Action requise : Uniformiser les UUID avec ~/sc_tools/tools/change_accountId.sh avant de poursuivre."
+    exit 2
+else
+	echo "=== Création de la base de données Soundcork interropue ==="
+    echo "[ERREUR INCONNUE] Le script s'est terminé avec le code inattendu : $STATUS"
+    exit $STATUS
+fi
+
+exit 0

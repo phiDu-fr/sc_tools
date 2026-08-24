@@ -90,6 +90,11 @@ do
     sed -i "s|^margeAccountUUID=$|margeAccountUUID=$uuid|" "$TMP_INI"
 done
 
+mv "$TMP_INI" "$INI_FILE"
+
+echo "INI mis à jour : $INI_FILE"
+exit 0
+
 else
 
 echo "Plusieurs margeAccountUUID détectés"
@@ -105,8 +110,10 @@ do
     echo
 done
 
+echo ""
+echo "Il est judicieux de n'avoir qu'un margeAccountUUID :"
+echo "    En choisir un et pour les enceintes où le ID est différent, utiliser ~/sc_tools/tools/change_accountId.sh <SuffIP_SoundTouch> <AccountId>"
+echo "    Relancer $0"
+exit 2
+
 fi
-
-mv "$TMP_INI" "$INI_FILE"
-
-echo "INI mis à jour : $INI_FILE"

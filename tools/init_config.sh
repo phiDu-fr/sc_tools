@@ -11,8 +11,8 @@ rm -rf sc_virtual
 
 git clone https://github.com/deborahgu/soundcork.git
 git clone https://github.com/phiDu-fr/sc_tools.git
-git clone https://github.com/phiDu-fr/sc_music.git
-git clone https://github.com/phiDu-fr/sc_virtual.git
+#git clone https://github.com/phiDu-fr/sc_music.git
+#git clone https://github.com/phiDu-fr/sc_virtual.git
 
 echo "=== Démarrage de l'initialisation ==="
 
@@ -126,7 +126,13 @@ if [ $STATUS -eq 0 ]; then
     echo "[SUCCÈS] Le fichier INI est généré et les enceintes sont synchronisées sur le même UUID."
 	mv /home/pi/soundcork/dataX /home/pi/soundcork/data
 	echo "=== Fin création de la base de données Soundcork ==="
+	echo "=== Création des containers docker ==="
+	docker compose -f $HOME/soundcork/docker-compose.yml up -d --build
+	docker compose -f $HOME/sc_tools/docker-compose.yml up -d --build
+	echo "=== Fin de la création des containers docker ==="
 	echo "=+=+=+ Fin de la configuration de base +=+=+="
+    echo "Vous pouvez maintenant utiliser sc_tools depuis un navigateur connecté au réseau local (wifi ou filaire)"
+    echo "  à l'adresse  http://$ValeurIP"
 elif [ $STATUS -eq 1 ]; then
 	echo "=== Création de la base de données Soundcork interropue ==="
     echo "[ERREUR CRITIQUE] Impossible d'accéder au répertoire dataX. Arrêt de init.sh."

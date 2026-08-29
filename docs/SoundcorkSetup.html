@@ -79,12 +79,12 @@
             color: #d14;
         }
     </style></head><body>
-    <h1>Installer Soundcork et soundcork-stockholm-app et quelques outils sur un Raspberry (3B+ ou Zero 2 W mini)</h1>
+    <h1>Installer Soundcork et les projets sc_xx sur un Raspberry (3B+ ou Zero 2 W mini)</h1>
     <p>
         <em>Pour pallier le shutdown Soundtouch du 6 mai 2026.</em>
     </p>
     <p>
-        <strong>Note :</strong> Le Raspberry Zero 2 W mini fonctionne très bien <b>sans soundcork-stockholm-app</b>.
+        <strong>Note :</strong> Le Raspberry Zero 2 W mini fonctionne très bien.
     </p>
     <hr>
     
@@ -92,7 +92,7 @@
     <h4>Matériel :</h4>
     <ul>
         <li>Raspberry Zero 2 W minimum, Raspberry Pi 3B+ conseillé</li>
-        <li>Carte micro SD 16 Go minimum classe 10 ou SSD interface USB</li>
+        <li>Carte micro SD 16 Go minimum classe 10 ou SSD auto-alimenté interface USB</li>
         <li>Carte RJ45 dans le cas de branchement filaire</li>
         <li>Câble micro USB pour alimentation électrique, à brancher sur port USB de la box/routeur ou sur alimentation officielle Raspberry</li>
     </ul>
@@ -117,66 +117,246 @@
     <p><u>Puis :</u></p>
     <ul>
         <li>Installer sur PC Putty ou Kitty (mieux) <a href="https://www.fosshub.com/KiTTY.html?dwl=kitty_portable-0.76.1.13.exe">Lien KiTTY</a></li>
-        <li>Mettre à jour l'OS :</li>
+        <li>Se connecter sur le Raspberry : <br>
+        <img src="screenshot-KiTTY.jpg" alt="">
+		</li>
+        <li>Utilisateur : pi ; mot de passe : pi</li>
+        <li>Si la connexion ne fonctionne pas :
+    <ul>
+			<li>Trouver l'adresse IP fournie par la Box ou le routeur du Raspberry en se connectant sur la Box ou routeur</li>
+    </ul>
+		</li>
     </ul>
 
+    <p>
+        <li>Mettre à jour l'OS :</li>
+	</p>
     <!-- EXEMPLE DE LA NOUVELLE SYNTAXE ULTRA-SIMPLE -->
 <pre class="code-block">sudo apt update &amp;&amp; sudo apt upgrade -y</pre>
     
-    <h3>Installer des applis</h3>
-    <ul>
-        <li>Installer sc_tools :</li>
-    </ul>
-
-<pre class="code-block">cd $HOME<br>curl -o sc_tools.latest.7z http://phd.dsmynas.net/sc_tools/sc_tools.latest.7z<br>7z x sc_tools.latest.7z -o$HOME/sc_tools/<br>rm sc_tools.latest.7z<br>find ./sc_tools/ -type f -exec chmod 664 {} +<br>find ./sc_tools/ -type f -name "*.sh" -exec chmod 775 {} +<br>find ./sc_tools/ -type d -exec chmod 775 {} +</pre>
-    
-   <ul>
-        <li>Pour le Rapberry Pi zero 2W :</li>
-    </ul>
-
-<pre class="code-block">sudo  ~/sc_tools/tools/swapRpiZero2.sh</pre>
-
-    <ul>
-        <li>Installation de docker :</li>
-    </ul>
-
-<pre class="code-block">curl -fsSL https://get.docker.com -o get-docker.sh<br>sudo sh get-docker.sh<br>sudo usermod -aG docker $USER<br>newgrp docker<br>sudo tee /etc/docker/daemon.json &gt; /dev/null &lt;&lt; 'EOF'<br>{<br>  "dns": ["8.8.8.8", "1.1.1.1"]<br>}<br>EOF<br>sudo systemctl restart docker</pre>
+    <h3>Installations des prérequis</h3>
 
     <ul>
         <li>Paquets à installer :</li>
     </ul>
 
-<pre class="code-block">sudo apt-get install $(cat ~/sc_tools/docs/paquets_a_installer.txt) -y<br>sudo apt-get autoremove --purge -y<br><br># Arret du serveur web (pas utile)<br>sudo systemctl stop nginx<br>sudo systemctl disable nginx<br><br># Arret du serveur multimedia (si pas de SSD USB connecté)<br>sudo systemctl stop minidlna.service<br>sudo systemctl disable minidlna.service</pre>
+<pre class="code-block">
+sudo apt-get install \
+avahi-daemon avahi-utils base-files base-passwd bash bash-completion binfmt-support bluez bluez-alsa-utils bluez-firmware \
+bsdutils build-essential ca-certificates cifs-utils cloud-init console-setup containerd.io coreutils cpio cron cron-daemon-common curl dash \
+dhcpcd-base diffutils dmidecode \
+dos2unix dosfstools e2fsprogs ed ethtool eyed3 fbset fdisk fdupes ffmpeg file findutils firmware-atheros \
+firmware-brcm80211 firmware-libertas firmware-mediatek firmware-realtek flac flatpak gcc-14-base gdb gimp git gnupg gpiod grep gzip hostname htop init \
+init-system-helpers initramfs-tools iproute2 iputils-ping jdupes jq keyboard-configuration kmod kms++-utils less \
+login.defs logrotate logsave lsof lua5.1 luajit man-db manpages-dev mawk mkvtoolnix \
+mount nano ncdu ncurses-base ncurses-bin net-tools netbase network-manager nfs-common nfs-kernel-server nftables nmap nodejs ntfs-3g openssl \
+openssl-provider-legacy \
+p7zip-full parted passwd pciutils perl-base php-curl php-fpm pi-bluetooth pipewire pipewire-audio pipewire-pulse pkg-config procps psmisc python-is-python3  \
+python3 \
+python3-full python3-gpiozero python3-libgpiod python3-pip python3-rpi-lgpio python3-smbus2 python3-spidev python3-venv qemu-user-static \
+rsync samba samba-common sed \
+sensible-utils smbclient sqv ssh ssh-import-id strace sudo systemd systemd-sysv systemd-timesyncd sysvinit-utils tar tcpdump testdisk \
+tmux tree tzdata udev udisks2 unzip usb-modeswitch usbutils userconf-pi util-linux v4l-utils vim-common vim-tiny vlc wget whiptail wireless-tools wl-clipboard \
+wpasupplicant xmlstarlet zip zlib1g zlib1g-dev -y
+sudo apt-get autoremove --purge -y
+</pre>
     
+    <ul>
+        <li>Installation de docker :</li>
+    </ul>
+
+<pre class="code-block">
+curl -fsSL https://get.docker.com -o get-docker.sh
+sudo sh get-docker.sh
+sudo usermod -aG docker $USER
+newgrp docker
+sudo tee /etc/docker/daemon.json &gt; /dev/null &lt;&lt; 'EOF'
+{
+  "dns": ["8.8.8.8", "1.1.1.1"]
+}
+EOF
+sudo systemctl restart docker
+</pre>
+
     <ul>
         <li>Alias :</li>
     </ul>
 
-<pre class="code-block">if ! grep -q "alias ll='ls -la'" ~/.bashrc; then<br>    echo "alias ll='ls -la'" &gt;&gt; ~/.bashrc<br>fi<br>source ./.bashrc</pre>
-    
-    <h3>Samba</h3>
+<pre class="code-block">
+tee $HOME/.bash_aliases &gt; /dev/null &lt;&lt; 'EOF'
+alias ll='ls -lah'
+alias py='source /home/pi/.venv/bin/activate && python3'
 
-<pre class="code-block">sudo cp /etc/samba/smb.conf /etc/samba/smb.conf.bak 2&gt;/dev/null || true<br>sudo tee /etc/samba/smb.conf &gt; /dev/null &lt;&lt; 'EOF'<br>[global]<br>deadtime = 15<br>disable netbios = Yes<br>disable spoolss = Yes<br>dns proxy = No<br>load printers = No<br>logging = file<br>map to guest = Bad User<br>max log size = 1000<br>printcap name = /dev/null<br>security = USER<br>server min protocol = SMB2<br>server role = standalone server<br>smb ports = 445<br>socket options = TCP_NODELAY IPTOS_LOWDELAY<br>idmap config * : backend = tdb<br>posix locking = No<br>printing = bsd<br>strict locking = No<br>use sendfile = Yes<br>veto files = /.git/node_modules/.cache/<br><br>[pi]<br>create mask = 0777<br>directory mask = 0777<br>force user = pi<br>guest ok = Yes<br>level2 oplocks = No<br>oplocks = No<br>path = /home/pi<br>read only = No<br>EOF</pre>
-    
+alias dc='docker compose'
+alias dps='docker ps -a'
+alias dstat='docker stats --format "table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}"'
+alias docker-compose='docker compose'
+
+function d_up() {
+    docker compose down "$1"
+    sauve
+    docker compose up -d "$1"
+    docker compose logs -f "$1"
+}
+
+function d_rst() {
+    docker compose stop "$1"
+    sauve
+    docker compose start "$1"
+    docker compose logs -f "$1"
+}
+
+function dx {
+    docker exec -it "$1" /bin/bash || docker exec -it "$1" /bin/sh
+}
+
+function sshST() {
+    ssh -o HostKeyAlgorithms=ssh-rsa -o PubkeyAcceptedAlgorithms=ssh-rsa \
+        -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+        -o BatchMode=yes -o ConnectTimeout=3 -o LogLevel=ERROR \
+        "root@192.168.1.$1"
+}
+
+function rebuild_dlna_cache() {
+    docker compose -f /home/pi/sc_tools/docker-compose.yml stop local_dlna
+    sudo rm -rf /home/pi/sc_tools/dlna_cache/cache/
+    docker compose -f /home/pi/sc_tools/docker-compose.yml start local_dlna
+}
+
+function sub_rebuild_cache() {
+    docker compose -f /home/pi/sc_music/docker-compose.yml stop subsonic_backend
+    sudo rm -rf /home/pi/sc_music/data/
+    docker compose -f /home/pi/sc_music/docker-compose.yml start subsonic_backend
+}
+EOF
+source $HOME\.bashrc
+</pre>
+<!-- 
+if ! grep -q "alias ll='ls -la'" ~/.bashrc; then
+    echo "alias ll='ls -la'" >> ~/.bashrc
+fi
+source ./.bashrc
+ -->    
+
     <ul>
-        <li>Utilisateur et démarrage samba :</li>
+        <li>Samba :</li>
     </ul>
 
-<pre class="code-block">(echo "pi"; echo "pi") | sudo smbpasswd -s -a pi<br>sudo systemctl restart smbd</pre>
-    
-    <h3>Installer soundcork et soundcork-stockholm-app</h3>
+<pre class="code-block">
+sudo cp /etc/samba/smb.conf /etc/samba/smb.conf.bak 2&gt;/dev/null || true
+sudo tee /etc/samba/smb.conf &gt; /dev/null &lt;&lt; 'EOF'
+[global]
+deadtime = 15
+disable netbios = Yes
+disable spoolss = Yes
+dns proxy = No
+load printers = No
+logging = file
+map to guest = Bad User
+max log size = 1000
+printcap name = /dev/null
+security = USER
+server min protocol = SMB2
+server role = standalone server
+smb ports = 445
+socket options = TCP_NODELAY IPTOS_LOWDELAY
+idmap config * : backend = tdb
+posix locking = No
+printing = bsd
+strict locking = No
+use sendfile = Yes
+veto files = /.git/node_modules/.cache/
+
+[pi]
+create mask = 0777
+directory mask = 0777
+force user = pi
+guest ok = Yes
+level2 oplocks = No
+oplocks = No
+path = /home/pi
+read only = No
+EOF
+
+(echo "pi"; echo "pi") | sudo smbpasswd -s -a pi
+sudo systemctl restart smbd</pre>
+</pre>
+<u>Maintenant vous pouvez accéder au Raspberry à partir du partage windows \\raspberrypi\pi</u>
+
     <ul>
-        <li>Clonage des git :</li>
+        <li>Pour le Raspberry Pi zero 2W :</li>
     </ul>
 
-<pre class="code-block">cd $HOME &amp;&amp; git clone https://github.com/deborahgu/soundcork.git<br>git clone https://github.com/krahl/soundcork-stockholm-app.git</pre>
+<pre class="code-block">
+sudo  ~/sc_tools/tools/swapRpiZero2.sh
+</pre>
     
     <ul>
-        <li>Configurations par défaut :</li>
+        <li>Pour accéder aux enceintes rootées :</li>
     </ul>
 
-<pre class="code-block">cd ~/sc_tools/docs &amp;&amp; find . -type f -name "*.etalon" -exec cp --parents {} ~/ \; &amp;&amp; cd</pre>
+<pre class="code-block">
+tee ~/.ssh/config  > /dev/null << 'EOF'
+host 192.168.1.*
+    HostKeyAlgorithms +ssh-rsa
+    PubkeyAcceptedKeyTypes +ssh-rsa
+EOF
+</pre>
     
+    <h3>Installations des applications</h3>
+    <ul>
+        <li>Clonnage des dépôts :</li>
+    </ul>
+
+<pre class="code-block">
+git clone https://github.com/phiDu-fr/sc_tools
+</pre>
+    
+    <ul>
+        <li>Configurations par défaut, à ce niveau :</li>
+			<ul>	
+				<li><b>Toutes les enceintes doivent être branchées et raccordées au réseau local</b> (wifi ou filaire)</li>
+				<li><span style="color: red;"><b>Démonter les disques externes des sous-dossiers</b></span></li>
+				<li>Ce script :</li>
+					<ul>
+						<li>Configure les applis Soundcork et sc_tools</li>
+						<li>Si tout se passe bien, crée et démarre les containers docker</li>
+					</ul>
+				<li>Bien suivre le compte rendu sure la console</li>
+			</ul>
+    </ul>
+
+<pre class="code-block">
+cp $HOME/sc_tools/tools/init_config.sh $HOME/init_config.sh
+$HOME/init_config.sh
+</pre>
+<h4><b>Si tout s'est bien déroulé, doit indiquer :</b> Vous pouvez maintenant utiliser sc_tools depuis un navigateur connecté au réseau local (wifi ou filaire) à l'adresse</h4>
+<h3>http://XXX.XXX.XXX.XXX</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     <ul>
         <li>Recherche journalière de mise à jour (ajouter la ligne dans crontab) :</li>
     </ul>

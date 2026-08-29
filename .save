@@ -1,0 +1,7 @@
+docker-compose.yml
+Dockerfile
+requirements.txt
+.env
+Music/sc_createM3u.sh
+data/
+www/img/radios/

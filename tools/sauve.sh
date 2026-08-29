@@ -20,6 +20,10 @@ apt-mark showmanual > "$HOME/sc_tools/docs/paquets_a_installer.txt"
 cd "$HOME/sc_tools" || { echo "❌ Erreur : Impossible d'accéder à $HOME/sc_tools"; exit 1; }
 7z a -t7z -mx=9 "$DEST_DIR/$ARCHIVE_NAME" $(find . -maxdepth 1 -type f) app/ www/ data/ docs/ tools/ update/ '-xr!*.7z' '-xr!*.zip' '-xr!*.mp3' '-xr!core.*' '-xr!__pycache__/'
 
+# 3b. Sauvegarde paramètres sc_tools
+cd "$HOME/sc_tools" || { echo "❌ Erreur : Impossible d'accéder à $HOME/sc_tools"; exit 1; }
+7z a -t7z -mx=9 "$DEST_DIR/param$(date +%Y%m%d-%H%M).7z" @.save 
+
 # 4. Sauvegarde sc_music
 cd "$HOME" || { echo "❌ Erreur : Impossible d'accéder à $HOME"; exit 1; }
 7z a -t7z -mx=9 "$DEST_DIR/$ARCHIVE_NAME" $(find . -maxdepth 1 -type f) sc_music/ '-xr!*.jpg' '-xr!*.7z' '-xr!*.zip' '-xr!*.mp3' '-xr!*.db' '-xr!core.*' '-xr!__pycache__/'

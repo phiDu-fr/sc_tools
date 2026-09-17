@@ -1,0 +1,1 @@
+/home/pi/sc_virtual/tools/bt_manager.sh

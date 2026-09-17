@@ -631,6 +631,7 @@ async function createZone() {
             const masterIp = ips[0];
             const masterName = globalData.speakers[masterIp] ? globalData.speakers[masterIp].name : masterIp;
             alert(`Zone multi-room créée avec succès !\nL'enceinte maître est : ${masterName}`);
+			exitMultiSelectMode();
         } else {
             alert("Erreur: " + (result.message || "Impossible de grouper."));
         }
@@ -705,7 +706,7 @@ function renderHomeGrid() {
         const cleanName = radio.name.replace(/'/g, "\\'").replace(/"/g, '&quot;');
         let visualHtml = '<i class="fas fa-broadcast-tower" style="font-size: 35px; color: #888;"></i>';
         if (radio.logo && radio.logo !== 'FA_ICON') {
-            visualHtml = `<img src="${radio.logo}" alt="${cleanName}" style="width: 100%; height: 100%; border-radius: 8px; object-fit: contain;">`;
+            visualHtml = `<img src="${radio.logo}" alt="${cleanName}" style="width: 100%; height: 100%; border-radius: 8px; object-fit: contain;"/>`;
         }
 
         return `

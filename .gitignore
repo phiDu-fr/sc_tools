@@ -38,6 +38,7 @@ dlna_cache/
 Podcasts/
 
 # Fichiers et dossiers spécifiques sc_tools
+
 update/
 radiofrance_downloader/radiofrance-config/
 app/virtual_soundtouch.py
@@ -48,7 +49,8 @@ docs/*.txt
 tools/install/
 tools/*.xml
 documentation_sources.md
-projet*.MD
+projetLogo.MD
+projetWS.MD
 
 # Frontend / Interface web
 www/player.html

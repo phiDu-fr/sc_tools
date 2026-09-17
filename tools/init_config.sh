@@ -5,12 +5,12 @@ echo "=+=+=+ Démarrage de la configuration de base +=+=+="
 echo "=== Clonage des dépôts ==="
 cd $HOME
 rm -rf soundcork
-rm -rf sc_tools
+# rm -rf sc_tools
 rm -rf sc_music
 rm -rf sc_virtual
 
 git clone https://github.com/deborahgu/soundcork.git
-git clone https://github.com/phiDu-fr/sc_tools.git
+#git clone https://github.com/phiDu-fr/sc_tools.git
 #git clone https://github.com/phiDu-fr/sc_music.git
 #git clone https://github.com/phiDu-fr/sc_virtual.git
 
@@ -46,11 +46,43 @@ fi
 ENV_PRIVATE="/home/pi/sc_tools/.env.private"
 ENV_FILE="/home/pi/sc_tools/.env"
 
+if [! -f "$ENV_PRIVATE" ]; then
+cat > "$ENV_PRIVATE" <<EOF
+# =========================================================
+# CONFIGURATION SOUNDTOUCH CUSTOM
+# =========================================================
+
+# Interface réseau pour diffuser la musique (DLNA)
+# - eth0  : Câble réseau
+# - wlan0 : Wi-Fi
+# - lo    : Ne pas diffuser sur le réseau (Interne uniquement)
+DLNA_INTERFACE=eth0
+
+# Chemin vers la musique (NAS, Disque USB, etc.)
+MEDIA_PATH=/home/pi/sc_tools/Music/mp3
+
+# Jeton Radio France
+# create token : https://developers.radiofrance.fr/
+RF_TOKEN=blabla-blabla-blabla-blabla
+
+# Marge 
+SC_MARGE_ADDR=192.168.1.116
+SC_MARGE_PORT=8000
+SC_MARGE_ACCOUNT=1234567
+SC_SOUNDCORK_DB=/home/pi/soundcork/data
+
+#Enceinte Bluetooth
+BT_MAC_ADDRESS="70:99:1C:AF:FB:AA"
+EOF
+
+fi
+
 if [ -f "$ENV_PRIVATE" ]; then
     mv "$ENV_PRIVATE" "$ENV_FILE"
     echo "[OK] Fichier renommé en $ENV_FILE"
 else
-    echo "[Info] Le fichier $ENV_PRIVATE n'existe pas. Continuité avec $ENV_FILE s'il existe."
+
+	echo "[Info] Le fichier $ENV_PRIVATE n'existe pas. Continuité avec $ENV_FILE s'il existe."
 fi
 
 # 4. Force brute réseau pour l'enceinte (port 8090)

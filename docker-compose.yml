@@ -48,6 +48,6 @@ services:
     volumes:
       # Lecture dynamique du chemin de la musique
       - ${MEDIA_PATH:-./Music}:/media:ro
-      - ./playlists:/playlists:ro
       - ./dlna_cache:/minidlna 
+      #- ./playlists:/playlists:ro
     restart: unless-stopped

@@ -13,7 +13,7 @@
     <meta name="apple-mobile-web-app-title" content="SoundCork">
     <link rel="apple-touch-icon" href="img/icon-192.png">
 
-   <title>En Direct - SoundTouch</title>
+    <title>En Direct - SoundTouch</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <link rel="stylesheet" href="css/global.css">
     <style>
@@ -202,8 +202,7 @@
 
         <main class="main-view">
             <div class="top-bar">
-                <!-- <div style="display: flex; width: 100%; align-items: center;"> -->
-				<div style="display: flex; flex: 1; min-width: 0; align-items: center;">
+                <div style="display: flex; flex: 1; min-width: 0; align-items: center;">
                     <button class="mobile-menu-btn" onclick="toggleMobileMenu(event)">
                         <i class="fas fa-bars"></i>
                     </button>
@@ -224,7 +223,7 @@
             <div class="now-playing-container hidden" id="nowPlayingCard">
                 <div class="np-cover-wrapper">
                     <i class="fas fa-music" id="np-cover-fallback"></i>
-                    <img id="np-cover-img" class="np-cover-img" src="" alt="Cover">
+                    <img id="np-cover-img" class="np-cover-img" src="" alt="Cover"/>
                 </div>
                 
                 <div class="np-details">
@@ -249,7 +248,7 @@
                     </div>
 
                     <div id="np-live-show" class="np-live-show hidden">
-                        <img id="np-show-img" class="np-show-img" src="" alt="Émission">
+                        <img id="np-show-img" class="np-show-img" src="" alt="Émission"/>
                         <div class="np-show-info">
                             <div class="np-show-badge"><i class="fas fa-circle"></i> En direct</div>
                             <div class="np-show-title" id="np-show-title">-</div>
@@ -291,6 +290,7 @@
                 npCard.classList.add('hidden');
                 noMsg.classList.remove('hidden');
                 noMsg.innerText = "Cochez une enceinte dans le menu pour voir les détails.";
+                document.title = "En Direct - SoundTouch";
                 updateBigRemoteUI({}); 
                 return;
             }
@@ -301,12 +301,24 @@
                 npCard.classList.add('hidden');
                 noMsg.classList.remove('hidden');
                 noMsg.innerText = "L'enceinte sélectionnée est actuellement en veille.";
+                document.title = "En Direct - SoundTouch";
                 updateBigRemoteUI({}); 
                 return;
             }
 
             npCard.classList.remove('hidden');
             noMsg.classList.add('hidden');
+
+            // Mise à jour du titre de l'onglet du navigateur avec le titre actuel
+            if (spk.track && spk.artist && spk.artist !== "Artiste inconnu") {
+                document.title = `${spk.track} - ${spk.artist}`;
+            } else if (spk.track) {
+                document.title = spk.track;
+            } else if (spk.playlist) {
+                document.title = spk.playlist;
+            } else {
+                document.title = "En Direct - SoundTouch";
+            }
 
             document.getElementById("np-track").textContent = spk.track || "Prêt";
             document.getElementById("np-artist").textContent = spk.artist || "Artiste inconnu";

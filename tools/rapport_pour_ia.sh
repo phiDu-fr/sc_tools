@@ -5,8 +5,9 @@
 
 
 rm -f ./export_pour_ia.txt
-git ls-files --exclude-standard > /tmp/filelist.txt
+git ls-files --exclude-standard | grep -vE '\.(png|svg|md|ico)$' > /tmp/filelist.txt
 tree --gitignore --noreport > export_pour_ia.txt
+# tree -a -I '.git|.git/*' --noreport > export_pour_ia.txt
 
 while read -r fichier; do
     awk 'FNR==1{print "\n\n========================================\nFichier : "FILENAME"\n========================================\n"}1' "$fichier" >> export_pour_ia.txt

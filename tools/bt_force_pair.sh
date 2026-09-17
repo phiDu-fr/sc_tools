@@ -1,1 +1,0 @@
-/home/pi/sc_virtual/tools/bt_force_pair.sh

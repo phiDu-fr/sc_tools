@@ -678,8 +678,13 @@ def get_data():
                 r_copy['logo'] = radio_logos_cache[clean_name]
             enriched_radios.append(r_copy)
 
+    # Filtrage de l'enceinte virtuelle/locale sur l'IP 127.0.0.1
+    filtered_speakers = {}
+    if hasattr(shared, 'speakers'):
+        filtered_speakers = {ip: data for ip, data in shared.speakers.items() if ip != '127.0.0.1'}
+
     return jsonify({
-        "speakers": shared.speakers if hasattr(shared, 'speakers') else {}, 
+        "speakers": filtered_speakers, 
         "presets": get_presets(), 
         "radios": enriched_radios
     })

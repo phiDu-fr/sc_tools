@@ -61,6 +61,37 @@ def play_podcast():
         except: pass
     return jsonify({"status": "ok"})
 
+@podcast_bp.route('/api/play_url', methods=['POST'])
+def play_url():
+    data = request.json or {}
+    url = data.get('url')
+    name = data.get('name', 'Flux URL')
+    ips = data.get('ips', [])
+
+    if not url:
+        return jsonify({"status": "error", "message": "URL manquante"}), 400
+    if not ips:
+        return jsonify({"status": "error", "message": "Aucune enceinte ciblée"}), 400
+
+    media_server_host = request.host.split(':')[0] 
+    
+    # Construction du paquet JSON pour le hack Orion (LOCAL_INTERNET_RADIO)
+    orion_data = {"name": name, "imageUrl": "", "streamUrl": url}
+    b64 = base64.b64encode(json.dumps(orion_data, separators=(',', ':')).encode()).decode()
+    xml_data = f'<?xml version="1.0" encoding="UTF-8"?><ContentItem source="LOCAL_INTERNET_RADIO" type="stationurl" location="http://{media_server_host}:{shared.SOUNDCORK_PORT}/core02/svc-bmx-adapter-orion/prod/orion/station?data={b64}"><itemName>{escape(name)}</itemName></ContentItem>'
+
+    for ip in ips:
+        # Libération de la file DLNA locale si elle était en cours de lecture
+        if ip in shared.server_queues:
+            shared.server_queues[ip] = {}
+            
+        try: 
+            requests.post(f"http://{ip}:8090/select", data=xml_data.encode('utf-8'), headers={"Content-Type": "text/xml; charset=utf-8"}, timeout=3.0)
+        except Exception as e: 
+            print(f"Erreur d'envoi à {ip}: {e}")
+            
+    return jsonify({"status": "ok"})
+    
 # =========================================================================
 # 3. LECTURE DES FICHIERS LOCAUX RF (EXISTANT)
 # =========================================================================

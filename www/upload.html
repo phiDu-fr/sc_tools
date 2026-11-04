@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr">,,
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,10 +10,68 @@
     <meta name="apple-mobile-web-app-title" content="SoundCork">
     <link rel="apple-touch-icon" href="img/icon-192.png">
 
-    <title>Diffuser Fichier - SoundTouch</title>
+    <title>Diffuser Fichier, Flux - Soundtouch</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <link rel="stylesheet" href="css/global.css">
     <style>
+        .form-section {
+            background-color: var(--bg-elevated);
+            padding: 24px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        .form-title {
+            font-size: 15px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: var(--spotify-green);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .input-group {
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .input-group label {
+            font-size: 13px;
+            color: var(--text-subdued);
+            font-weight: bold;
+        }
+        .text-input {
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #333;
+            background-color: var(--bg-base);
+            color: white;
+            font-size: 14px;
+            outline: none;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .text-input:focus { border-color: var(--spotify-green); }
+
+        .btn-action {
+            background-color: var(--spotify-green);
+            color: black;
+            border: none;
+            padding: 14px 24px;
+            border-radius: 500px;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            transition: transform 0.1s, background-color 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .btn-action:hover { transform: scale(1.02); background-color: #1ed760; }
+
         .upload-container {
             background-color: var(--bg-elevated);
             padding: 40px 20px;
@@ -84,39 +142,67 @@
 
         <main class="main-view">
             <div class="top-bar">
-                <!-- <div style="display: flex; width: 100%; align-items: center;"> -->
                 <div style="display: flex; flex: 1; min-width: 0; align-items: center;">
 					<button class="mobile-menu-btn" onclick="toggleMobileMenu(event)">
                         <i class="fas fa-bars"></i>
                     </button>
                     <h2 class="section-title" style="margin: 0; padding-left: 15px;">
-                        <i class="fas fa-mobile-alt" style="color: var(--spotify-green); margin-right: 10px;"></i> Diffuser un fichier
+                        <i class="fas fa-broadcast-tower" style="color: var(--spotify-green); margin-right: 10px;"></i> Diffuser Fichier ou Flux URL
                     </h2>
                 </div>
                 
-                <!-- <div class="sources-wrapper" id="sources-wrapper" style="max-width: 150px; width: 100%; margin: 0 15px;"></div> -->
                 <div class="remote-wrapper" id="remote-wrapper"></div>
             </div>
 
-            <p style="color: var(--text-subdued); font-size: 15px; margin-bottom: 20px;">
-                Sélectionnez un fichier audio (MP3, FLAC, M4A, WAV) depuis votre appareil. Il sera lu instantanément sur l'enceinte sélectionnée.
-            </p>
+            <!-- SECTION 1 : SAISIE ET ENVOI D'UNE URL DE FLUX (LOCAL_INTERNET_RADIO) -->
+            <div class="form-section">
+                <div class="form-title">
+                    <i class="fas fa-link"></i> 1. Diffuser un flux URL direct
+                </div>
+                
+                <div class="input-group">
+                    <label for="stream-name">Nom de la station / du flux :</label>
+                    <input type="text" id="stream-name" class="text-input" placeholder="Ex: Radio FIP Direct">
+                </div>
 
-            <div class="upload-container" id="drop-zone">
-                <i class="fas fa-cloud-upload-alt upload-icon"></i>
-                <div class="file-name-display" id="file-name">Aucun fichier sélectionné</div>
-                
-                <div class="file-input-wrapper">
-                    <button class="btn-upload">Choisir un fichier</button>
-                    <input type="file" id="audio-file" accept="audio/*" onchange="updateFileName()">
+                <div class="input-group">
+                    <label for="stream-url">URL du flux audio direct (MP3, AAC, stream) :</label>
+                    <input type="url" id="stream-url" class="text-input" placeholder="http://stream.radiofrance.fr/fip-midfi.mp3" required>
                 </div>
-                
-                <div style="margin-top: 20px;">
-                    <button class="btn-action btn-action-primary" style="width: auto; padding: 12px 30px; font-size: 16px; background-color: rgba(29, 185, 84, 0.1);" onclick="uploadAndPlay()">
-                        <i class="fas fa-play-circle"></i> Envoyer et Lire
-                    </button>
-                </div>
+
+                <!-- <button type="button" class="btn-action" onclick="submitStreamUrl()"> -->
+                    <!-- <i class="fas fa-play"></i> Diffuser l'URL sur l'enceinte active -->
+                <!-- </button> -->
+					<div style="margin-top: 10px;">
+						<!-- <button class="btn-action" style="width: auto; padding: 12px 30px;" onclick="submitStreamUrl()"> -->
+						<button type="button" class="btn-action" onclick="submitStreamUrl()">
+							<i class="fas fa-play-circle"></i> Diffuser l'URL
+						</button>
+					</div>
             </div>
+
+            <!-- SECTION 2 : UPLOAD DE FICHIER LOCAL -->
+            <div class="form-section">
+                <div class="form-title">
+                    <i class="fas fa-file"></i> 2. Diffuser un fichier local
+                </div>
+                
+                <div class="upload-container" id="drop-zone">
+					<i class="fas fa-cloud-upload-alt upload-icon"></i>
+					<div class="file-name-display" id="file-name">Aucun fichier sélectionné</div>
+					
+					<div class="file-input-wrapper">
+						<button class="btn-upload">Choisir un fichier</button>
+						<input type="file" id="audio-file" accept="audio/*" onchange="updateFileName()">
+					</div>
+					
+				</div>
+					<div style="margin-top: 10px;">
+						<button type="button" class="btn-action" onclick="uploadAndPlay()">
+							<i class="fas fa-play-circle"></i> Diffuser le fichier
+						</button>
+					</div>
+			</div>
 
         </main>
     </div>
@@ -144,14 +230,57 @@
             }
         }
 
+        async function submitStreamUrl() {
+            const url = document.getElementById('stream-url').value.trim();
+            const name = document.getElementById('stream-name').value.trim() || 'Flux Web';
+
+            if (!url) {
+                showNotification("Veuillez saisir une URL de flux valide.", "error");
+                return;
+            }
+
+            const ips = typeof getSelectedIps === 'function' ? getSelectedIps() : [];
+            if (ips.length === 0) {
+                showNotification("Sélectionnez au moins une enceinte active dans le menu.", "error");
+                return;
+            }
+
+            showNotification("⏳ Envoi du flux URL...", "warning");
+
+            try {
+                const response = await fetch('/api/play_url', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url, name, ips })
+                });
+
+                const data = await response.json();
+
+                if (data.status === 'ok') {
+                    showNotification("✅ Flux lancé avec succès !", "success");
+                    if (typeof fetchState === 'function') setTimeout(fetchState, 1500);
+                } else {
+                    showNotification("❌ " + (data.message || "Erreur lors de l'envoi"), "error");
+                }
+            } catch (error) {
+                showNotification("❌ Erreur réseau avec le serveur.", "error");
+            }
+        }
+
         async function uploadAndPlay() {
             const fileInput = document.getElementById('audio-file');
             const file = fileInput.files[0];
             
-            if (!file) return showNotification("Veuillez d'abord sélectionner un fichier audio.", "error");
+            if (!file) {
+                showNotification("Veuillez d'abord sélectionner un fichier audio.", "error");
+                return;
+            }
 
-            const ips = getSelectedIps(); 
-            if (ips.length === 0) return showNotification("Sélectionnez au moins une enceinte active dans le menu.", "error");
+            const ips = typeof getSelectedIps === 'function' ? getSelectedIps() : [];
+            if (ips.length === 0) {
+                showNotification("Sélectionnez au moins une enceinte active dans le menu.", "error");
+                return;
+            }
 
             const formData = new FormData();
             formData.append('file', file);
@@ -169,7 +298,7 @@
                 
                 if (data.status === 'ok') {
                     showNotification("✅ Lecture lancée !", "success");
-                    setTimeout(fetchState, 1500); 
+                    if (typeof fetchState === 'function') setTimeout(fetchState, 1500); 
                 } else {
                     showNotification("❌ " + data.message, "error");
                 }

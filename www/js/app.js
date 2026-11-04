@@ -8,7 +8,8 @@ let longPressTimer;
 let isPresetRecordMode = false;
 const LONG_PRESS_DURATION = 500;
 
-function handleSpeakerTouchStart(event, ip) {
+function handleSpeakerTouchStart(event, ip) { 
+    if (ip === '127.0.0.1') return;
     const spk = globalData.speakers[ip];
     if (!spk || (spk.state !== 'ON' && spk.state !== 'STANDBY')) return;
 
@@ -24,6 +25,7 @@ function handleSpeakerTouchEnd(event) {
 }
 
 function handleSpeakerClick(event, ip) {
+    if (ip === '127.0.0.1') return;
     clearTimeout(longPressTimer);
     
     const spk = globalData.speakers[ip];
@@ -41,6 +43,8 @@ function handleSpeakerClick(event, ip) {
 }
 
 function toggleSpeakerSelection(ip) {
+    if (ip === '127.0.0.1') return;
+    
     const chk = document.getElementById(`chk-${ip}`);
     if (chk && !chk.disabled) {
         chk.checked = !chk.checked;
@@ -60,7 +64,7 @@ function toggleSpeakerSelection(ip) {
     
     updateSidebarUI();
     updatePlayerInfo();
-    routePageUpdates(); // <-- FIX : Force la page centrale (now.html) à se rafraîchir
+    routePageUpdates();
 }
 
 function clearAllSpeakerSelections() {
@@ -72,11 +76,13 @@ function clearAllSpeakerSelections() {
     selectedSpeakersOrder = [];
     isMultiSelectMode = false;
     updateSidebarUI();
-    updatePlayerInfo(); // <-- FIX : Vide la barre de lecture en bas
-    routePageUpdates(); // <-- FIX : Vide la page centrale
+    updatePlayerInfo();
+    routePageUpdates();
 }
 
 function selectSpeaker(ip) {
+    if (ip === '127.0.0.1') return;
+
     const chk = document.getElementById(`chk-${ip}`);
     if (chk && !chk.disabled) {
         chk.checked = true;
@@ -87,20 +93,20 @@ function selectSpeaker(ip) {
     }
     updateSidebarUI();
     updatePlayerInfo();
-    routePageUpdates(); // <-- FIX : Force la page centrale (now.html) à se rafraîchir
+    routePageUpdates();
 }
 
 function exitMultiSelectMode() {
     isMultiSelectMode = false;
     const previousMaster = selectedSpeakersOrder.length > 0 ? selectedSpeakersOrder[0] : null;
     clearAllSpeakerSelections();
-    if (previousMaster) {
+    if (previousMaster && previousMaster !== '127.0.0.1') {
         selectSpeaker(previousMaster);
     }
     updateSidebarUI();
 }
 
-function updateSidebarUI() {	
+function updateSidebarUI() {    
     const sidebar = document.getElementById('speakers-list');
     const exitBtn = document.getElementById('exit-multi-select');
     
@@ -118,6 +124,8 @@ function updateSidebarUI() {
     
     const speakersKeys = Object.keys(globalData.speakers);
     for (const ip of speakersKeys) {
+        if (ip === '127.0.0.1') continue;
+
         const spk = globalData.speakers[ip];
         
         const isIntendedMaster = (isMultiSelectMode && selectedSpeakersOrder.length > 0 && selectedSpeakersOrder[0] === ip);
@@ -137,12 +145,14 @@ function updateSidebarUI() {
 
 function mergeSpeakerData(newSpeakers) {
     for (const existingIp in globalData.speakers) {
-        if (!newSpeakers[existingIp]) {
+        if (!newSpeakers[existingIp] || existingIp === '127.0.0.1') {
             delete globalData.speakers[existingIp];
         }
     }
 
     for (const ip in newSpeakers) {
+        if (ip === '127.0.0.1') continue;
+
         const newSpk = newSpeakers[ip];
         
         if (newSpk.is_stereo_slave) {
@@ -242,7 +252,7 @@ function setupPageListeners() {
 }
 
 function getSelectedIps() {
-    return selectedSpeakersOrder;
+    return selectedSpeakersOrder.filter(ip => ip !== '127.0.0.1');
 }
 
 async function fetchState() {
@@ -284,7 +294,7 @@ function renderSidebarDynamicElements() {
     if (!speakersDiv) return;
 
     let currentlySelected = getSelectedIps();
-    const speakersKeys = Object.keys(globalData.speakers);
+    const speakersKeys = Object.keys(globalData.speakers).filter(ip => ip !== '127.0.0.1');
     let htmlSpeakers = '';
     
     if (!hasInitializedSpeakers && speakersKeys.length > 0) {
@@ -324,7 +334,6 @@ function renderSidebarDynamicElements() {
         let disabledAttr = isDisabled ? 'disabled' : '';
         let disabledStyle = isDisabled ? 'style="opacity: 0.5; cursor: not-allowed;"' : '';
 
-        // --- GESTION DE LA BATTERIE ET DU SECTEUR ---
         let batteryHtml = '';
         if (data.battery_capable && data.battery_percent !== undefined) {
             let pct = parseInt(data.battery_percent);
@@ -369,7 +378,7 @@ function renderSidebarDynamicElements() {
             </div>`;
     }
     
-    selectedSpeakersOrder = selectedSpeakersOrder.filter(ip => validSelections.includes(ip));
+    selectedSpeakersOrder = selectedSpeakersOrder.filter(ip => validSelections.includes(ip) && ip !== '127.0.0.1');
     validSelections.forEach(ip => {
         if (!selectedSpeakersOrder.includes(ip)) selectedSpeakersOrder.push(ip);
     });
@@ -441,7 +450,6 @@ function updateSourcesSVG() {
 function updatePlayerInfo() {
     const ips = getSelectedIps();
     if (ips.length === 0) {
-        // Nettoie l'affichage si aucune enceinte
         const trackEl = document.getElementById('player-track');
         const artistEl = document.getElementById('player-artist');
         const albumEl = document.getElementById('player-album');
@@ -569,18 +577,16 @@ async function sendCommand(keyName, keyState = 'both') {
     });
 }
 
-// Fonction à appeler au clic sur ton nouveau bouton "Enregistrer Preset" (ex bt/aux)
 function togglePresetRecordMode() {
     isPresetRecordMode = !isPresetRecordMode;
     
-    // (Optionnel) Retour visuel sur le bouton pour indiquer que le mode est actif
     const btn = document.querySelector('[onclick*="togglePresetRecordMode"]');
     if (btn) {
         if (isPresetRecordMode) {
-            btn.style.fill = "#FA243C"; // Rouge
+            btn.style.fill = "#FA243C";
             btn.style.opacity = "0.8";
         } else {
-            btn.style.fill = ""; // Réinitialise
+            btn.style.fill = "";
             btn.style.opacity = "0.3";
         }
     }
@@ -591,21 +597,16 @@ async function playPreset(presetId) {
     if (ips.length === 0) return alert("Sélectionnez au moins une enceinte !");
 
     if (isPresetRecordMode) {
-        // Mode ENREGISTREMENT : Envoi de l'état 'press'
         await fetch('/api/key', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ ips: ips, key: 'PRESET_' + presetId, state: 'press' })
         });
         
-        // Désactivation du mode après l'enregistrement
         togglePresetRecordMode();
-        
-        // Rafraîchissement forcé pour mettre à jour les noms des presets
         setTimeout(() => fetch('/api/poll', {method: 'POST'}), 1000);
         
     } else {
-        // Mode LECTURE NORMAL
         await fetch('/api/play_preset', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -631,7 +632,7 @@ async function createZone() {
             const masterIp = ips[0];
             const masterName = globalData.speakers[masterIp] ? globalData.speakers[masterIp].name : masterIp;
             alert(`Zone multi-room créée avec succès !\nL'enceinte maître est : ${masterName}`);
-			exitMultiSelectMode();
+            exitMultiSelectMode();
         } else {
             alert("Erreur: " + (result.message || "Impossible de grouper."));
         }
@@ -782,4 +783,3 @@ async function changeSource(source) {
         if (typeof showNotification === 'function') showNotification("❌ Erreur réseau", "error");
     }
 }
-

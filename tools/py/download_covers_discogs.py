@@ -12,7 +12,8 @@ from mutagen.id3 import ID3NoHeaderError
 
 
 DISCOGS_API_URL = "https://api.discogs.com/database/search"
-DEFAULT_MUSIC_DIR = "/home/pi/sc_tools/Music/mp3"
+#DEFAULT_MUSIC_DIR = "/home/pi/sc_tools/Music/mp3"
+DEFAULT_MUSIC_DIR = "/home/pi/sc_tools/Music/mp3/Pink Floyd"
 ENV_FILE_PATH = Path("/home/pi/sc_tools/.env")
 USER_AGENT = "sc_tools_cover_fetcher/1.0"
 

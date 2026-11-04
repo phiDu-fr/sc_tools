@@ -293,9 +293,9 @@ class BoseWebsocketManager:
                     if speakers[ip]['source'] in ['LOCAL_INTERNET_RADIO', 'TUNEIN', 'RADIO_BROWSER']:
                         station_name = str(speakers[ip]['track']).upper() + " " + str(speakers[ip]['artist']).upper()
                         
-                        if "FRANCE INTER" in station_name or "FRANCEINTER" in station_name:
-                            import radios
-                            rf_data = radios.get_radiofrance_live("FRANCEINTER")
+                        rf_station = radios.detect_radiofrance_station(speakers[ip].get('playlist', ''), station_name)
+                        if rf_station:
+                            rf_data = radios.get_radiofrance_live(rf_station)
                             
                             if rf_data:
                                 speakers[ip]['show_title'] = rf_data.get('show_title')
@@ -314,3 +314,42 @@ class BoseWebsocketManager:
             pass
 
 bose_ws_manager = BoseWebsocketManager()
+
+
+# ---------------------------------------------------------
+# Radio France : rafraîchissement périodique du bloc « en direct »
+# (l'enceinte n'émet aucun événement quand un morceau FIP ou une émission change)
+# ---------------------------------------------------------
+RF_REFRESH_SECONDS = 20
+RADIO_SOURCES = ['LOCAL_INTERNET_RADIO', 'TUNEIN', 'RADIO_BROWSER']
+
+def refresh_radiofrance_shows():
+    """Met à jour show_title/show_desc/show_image des enceintes sur une antenne Radio France.
+    Les appels réseau sont mis en cache par radios.get_radiofrance_live(). Retourne True si quelque chose a changé."""
+    changed = False
+    for ip, spk in list(speakers.items()):
+        if spk.get('state') != 'ON' or spk.get('source') not in RADIO_SOURCES:
+            continue
+        station_name = str(spk.get('track', '')).upper() + " " + str(spk.get('artist', '')).upper()
+        rf_station = radios.detect_radiofrance_station(spk.get('playlist', ''), station_name)
+        if not rf_station:
+            continue
+        rf_data = radios.get_radiofrance_live(rf_station) or {}
+        new = (rf_data.get('show_title'), rf_data.get('show_desc'), rf_data.get('show_image'))
+        old = (spk.get('show_title'), spk.get('show_desc'), spk.get('show_image'))
+        if new != old:
+            spk['show_title'], spk['show_desc'], spk['show_image'] = new
+            changed = True
+    if changed:
+        socketio.emit('bose_update', {'speakers': speakers})
+    return changed
+
+def _radiofrance_refresh_loop():
+    while True:
+        time.sleep(RF_REFRESH_SECONDS)
+        try:
+            refresh_radiofrance_shows()
+        except Exception:
+            pass
+
+threading.Thread(target=_radiofrance_refresh_loop, daemon=True).start()

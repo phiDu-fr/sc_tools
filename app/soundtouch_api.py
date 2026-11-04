@@ -367,6 +367,7 @@ def get_presets():
     return {}
 
 def update_speaker_state(ip):
+    if ip == '127.0.0.1': return
     st_log(f"[Scan HTTP] Scan complet initié pour {ip}...")
     if not hasattr(shared, 'speaker_last_states'): shared.speaker_last_states = {}
     if not hasattr(shared, 'speaker_last_sources'): shared.speaker_last_sources = {}
@@ -636,6 +637,7 @@ def background_tasks():
             # --- SURVEILLANCE SILENCIEUSE ---
             if hasattr(shared, 'speakers'):
                 for ip in list(shared.speakers.keys()):
+                    if ip == '127.0.0.1': continue
                     if shared.speakers[ip].get('is_stereo_slave'):
                         continue
                     

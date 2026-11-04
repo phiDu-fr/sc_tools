@@ -172,3 +172,22 @@ curl -X POST \
   -d "<sysLanguage>5</sysLanguage>"
   http://192.168.1.65:8090/language
 ```
+
+### Get Wifi SSID
+```
+curl -s http://192.168.1.91:8090/getActiveWirelessProfile | xmllint --xpath 'string(//ssid)' -
+```
+
+### Set Wifi SSID
+```
+SSID = 
+WIFI_KEY=
+curl -s -X POST "http://192.168.1.91:8090/addWirelessProfile" \
+     -H "Content-Type: text/xml" \
+     -d @- <<EOF
+<AddWirelessProfile timeout="30">
+   <profile ssid="$SSID" password="$WIFI_KEY" securityType="wpa_or_wpa2" />
+</AddWirelessProfile>
+EOF
+```
+

@@ -5,7 +5,7 @@
 
 
 rm -f ./export_pour_ia.txt
-git ls-files --exclude-standard | grep -vE '\.(png|svg|md|ico)$' > /tmp/filelist.txt
+git ls-files --exclude-standard | grep -vE '\.(png|svg|md|ico|tools/)$' > /tmp/filelist.txt
 tree --gitignore --noreport > export_pour_ia.txt
 # tree -a -I '.git|.git/*' --noreport > export_pour_ia.txt
 

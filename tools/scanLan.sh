@@ -62,7 +62,7 @@ get_hostname() {
 test_port() {
   local ip="$1"; local port="$2"
   
-  # Correction : Ajout de ':' (commande vide) pour garantir la redirection TCP
+  # Correction : Ajout de ':' (commande vide) pour garantir la redirection TCP 
   # Note: Assurez-vous que la commande GNU 'timeout' est bien installée sur votre système
   if timeout "${port_timeout}" bash -c ": >/dev/tcp/${ip}/${port}" >/dev/null 2>&1; then
     echo "open"

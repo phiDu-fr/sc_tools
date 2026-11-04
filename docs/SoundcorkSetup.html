@@ -143,15 +143,15 @@
 <pre class="code-block">
 sudo apt-get install \
 avahi-daemon avahi-utils base-files base-passwd bash bash-completion binfmt-support bluez bluez-alsa-utils bluez-firmware \
-bsdutils build-essential ca-certificates cifs-utils cloud-init console-setup containerd.io coreutils cpio cron cron-daemon-common curl dash \
+bsdutils build-essential ca-certificates cifs-utils cloud-init console-setup coreutils cpio cron cron-daemon-common curl dash \
 dhcpcd-base diffutils dmidecode \
 dos2unix dosfstools e2fsprogs ed ethtool eyed3 fbset fdisk fdupes ffmpeg file findutils firmware-atheros \
-firmware-brcm80211 firmware-libertas firmware-mediatek firmware-realtek flac flatpak gcc-14-base gdb gimp git gnupg gpiod grep gzip hostname htop init \
+firmware-brcm80211 firmware-libertas firmware-mediatek firmware-realtek flac flatpak gcc-14-base gdb git gnupg gpiod grep gzip hostname htop init \
 init-system-helpers initramfs-tools iproute2 iputils-ping jdupes jq keyboard-configuration kmod kms++-utils less \
 login.defs logrotate logsave lsof lua5.1 luajit man-db manpages-dev mawk mkvtoolnix \
 mount nano ncdu ncurses-base ncurses-bin net-tools netbase network-manager nfs-common nfs-kernel-server nftables nmap nodejs ntfs-3g openssl \
 openssl-provider-legacy \
-p7zip-full parted passwd pciutils perl-base php-curl php-fpm pi-bluetooth pipewire pipewire-audio pipewire-pulse pkg-config procps psmisc python-is-python3  \
+p7zip-full passwd pciutils perl-base php-curl php-fpm pi-bluetooth pipewire pipewire-audio pipewire-pulse pkg-config procps psmisc python-is-python3  \
 python3 \
 python3-full python3-gpiozero python3-libgpiod python3-pip python3-rpi-lgpio python3-smbus2 python3-spidev python3-venv qemu-user-static \
 rsync samba samba-common sed \
@@ -229,6 +229,7 @@ function sub_rebuild_cache() {
     docker compose -f /home/pi/sc_music/docker-compose.yml start subsonic_backend
 }
 EOF
+
 source $HOME\.bashrc
 </pre>
 <!-- 
@@ -246,36 +247,38 @@ source ./.bashrc
 sudo cp /etc/samba/smb.conf /etc/samba/smb.conf.bak 2&gt;/dev/null || true
 sudo tee /etc/samba/smb.conf &gt; /dev/null &lt;&lt; 'EOF'
 [global]
-deadtime = 15
-disable netbios = Yes
-disable spoolss = Yes
-dns proxy = No
-load printers = No
-logging = file
-map to guest = Bad User
-max log size = 1000
-printcap name = /dev/null
-security = USER
-server min protocol = SMB2
-server role = standalone server
-smb ports = 445
-socket options = TCP_NODELAY IPTOS_LOWDELAY
-idmap config * : backend = tdb
-posix locking = No
-printing = bsd
-strict locking = No
-use sendfile = Yes
-veto files = /.git/node_modules/.cache/
+    deadtime = 15
+    disable netbios = Yes
+    disable spoolss = Yes
+    dns proxy = No
+    load printers = No
+    logging = file
+    map to guest = Never
+    max log size = 1000
+    printcap name = /dev/null
+    security = USER
+    server min protocol = SMB2
+    server role = standalone server
+    smb ports = 445
+    socket options = TCP_NODELAY IPTOS_LOWDELAY
+    idmap config * : backend = tdb
+    posix locking = No
+    printing = bsd
+    strict locking = No
+    use sendfile = Yes
+    veto files = /.git/node_modules/.cache/
 
 [pi]
-create mask = 0777
-directory mask = 0777
-force user = pi
-guest ok = Yes
-level2 oplocks = No
-oplocks = No
-path = /home/pi
-read only = No
+    comment = Repertoire personnel pi
+    path = /home/pi
+    valid users = pi
+    read only = No
+    create mask = 0777
+    directory mask = 0777
+    force user = pi
+    level2 oplocks = No
+    oplocks = No
+
 EOF
 
 (echo "pi"; echo "pi") | sudo smbpasswd -s -a pi

@@ -290,7 +290,10 @@
             <div class="now-playing-container hidden" id="nowPlayingCard">
                 <div class="np-cover-wrapper">
                     <i class="fas fa-music" id="np-cover-fallback"></i>
+				  <a id="np-cover-link" href="" target="_blank">
                     <img id="np-cover-img" class="np-cover-img" src="" alt="Cover"/>
+                  </a>
+
                 </div>
                 
                 <div class="np-details">
@@ -403,7 +406,16 @@
             document.getElementById("np-playlist").textContent = spk.playlist || "Flux Direct";
             document.getElementById("np-source").textContent = spk.source || "-";
 
-            const progressContainer = document.querySelector(".progress-container");
+            const coverLink = document.getElementById("np-cover-link");
+            if (coverLink) {
+                const artist = (spk.artist && spk.artist !== "Artiste inconnu") ? spk.artist : "";
+                const album = (spk.album && spk.album !== "-") ? spk.album : "";
+                const searchQuery = encodeURIComponent(`${album},${artist}`.trim());
+                coverLink.href = `https://music.youtube.com/search?q=${searchQuery}`;
+                coverLink.href = `https://music.youtube.com/search?q=${searchQuery}`;
+            }
+			
+			const progressContainer = document.querySelector(".progress-container");
             const radioSources = ['TUNEIN', 'RADIO_BROWSER', 'LOCAL_INTERNET_RADIO'];
 
             if (radioSources.includes(spk.source)) {

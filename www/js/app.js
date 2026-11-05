@@ -366,7 +366,10 @@ function renderSidebarDynamicElements() {
                 
                 <div style="display:flex; align-items:center; gap:10px; flex: 1; min-width: 0;">
                     <div class="status-indicator ${statusClass}"></div>
-                    <div class="speaker-name">${data.name || ip}</div>
+                    <div>
+						<div class="speaker-name">${data.name || ip}</div>
+						<div style="font-size: 8px; color: var(--text-subdued);">${ip}</div>
+                    </div>
                     ${batteryHtml}
                 </div>
                 

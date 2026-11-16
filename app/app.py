@@ -12,6 +12,7 @@ from podcasts import podcast_bp
 from alarms import alarm_bp, sync_alarms_to_scheduler
 from tools import tools_bp
 from rf_dwl import rf_dwl_bp
+from history import history_bp
 from bose_websocket import bose_ws_manager 
 
 # Initialisation de l'application
@@ -26,6 +27,7 @@ app.register_blueprint(podcast_bp)
 app.register_blueprint(alarm_bp)
 app.register_blueprint(tools_bp)
 app.register_blueprint(rf_dwl_bp)
+app.register_blueprint(history_bp)
 
 # Fichiers statiques et page d'accueil
 @app.route('/<path:filename>')

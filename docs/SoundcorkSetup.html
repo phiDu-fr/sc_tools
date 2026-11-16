@@ -185,7 +185,12 @@ sudo systemctl restart docker
 <pre class="code-block">
 tee $HOME/.bash_aliases &gt; /dev/null &lt;&lt; 'EOF'
 alias ll='ls -lah'
+alias ...='cd ../..'
+alias ..='cd ..'
+
 alias py='source /home/pi/.venv/bin/activate && python3'
+alias sauve='/home/pi/sc_tools/tools/sauve.sh'
+alias up='sudo apt update && sudo apt upgrade -y && sudo apt autoremove -y'
 
 alias dc='docker compose'
 alias dps='docker ps -a'
@@ -230,7 +235,7 @@ function sub_rebuild_cache() {
 }
 EOF
 
-source $HOME\.bashrc
+source $HOME/.bashrc
 </pre>
 <!-- 
 if ! grep -q "alias ll='ls -la'" ~/.bashrc; then
@@ -285,6 +290,17 @@ EOF
 sudo systemctl restart smbd</pre>
 </pre>
 <u>Maintenant vous pouvez accéder au Raspberry à partir du partage windows \\raspberrypi\pi</u>
+    
+    
+    <h3>Installations des applications</h3>
+    <ul>
+        <li>Clonnage des dépôts :</li>
+    </ul>
+
+<pre class="code-block">
+git clone https://github.com/phiDu-fr/sc_tools.git
+git clone https://github.com/deborahgu/soundcork.git
+</pre>
 
     <ul>
         <li>Pour le Raspberry Pi zero 2W :</li>
@@ -305,16 +321,6 @@ host 192.168.1.*
     PubkeyAcceptedKeyTypes +ssh-rsa
 EOF
 </pre>
-    
-    <h3>Installations des applications</h3>
-    <ul>
-        <li>Clonnage des dépôts :</li>
-    </ul>
-
-<pre class="code-block">
-git clone https://github.com/phiDu-fr/sc_tools
-</pre>
-    
     <ul>
         <li>Configurations par défaut, à ce niveau :</li>
 			<ul>	

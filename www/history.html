@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#121212">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="SoundCork">
+    <link rel="apple-touch-icon" href="img/icon-192.png">
+
+    <title>Historique - SoundTouch</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="stylesheet" href="css/global.css">
+    <style>
+        .hist-wrap { max-width: 900px; width: 100%; }
+        .hist-day { font-size: 13px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px;
+                    color: var(--text-subdued); margin: 28px 0 10px 4px; }
+        .hist-day:first-child { margin-top: 0; }
+        .hist-row { display: flex; align-items: center; gap: 14px; padding: 10px 12px; border-radius: 8px;
+                    background-color: var(--bg-elevated); margin-bottom: 6px; transition: background-color 0.3s; }
+        .hist-row:hover { background-color: var(--bg-highlight); }
+        .hist-cover { width: 48px; height: 48px; flex-shrink: 0; border-radius: 4px; background-color: #333;
+                      display: flex; align-items: center; justify-content: center; color: #555; overflow: hidden; }
+        .hist-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .hist-text { flex: 1; min-width: 0; }
+        .hist-track { font-weight: bold; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .hist-sub { font-size: 13px; color: var(--text-subdued); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .hist-meta { flex-shrink: 0; text-align: right; font-size: 13px; color: var(--text-subdued); }
+        .hist-time { font-family: monospace; font-weight: bold; color: var(--text-base); }
+        .hist-spk { display: inline-block; margin-top: 4px; padding: 2px 10px; border-radius: 500px;
+                    background: var(--bg-highlight); font-size: 12px; max-width: 220px;
+                    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .hist-spk i { color: var(--spotify-green); margin-right: 5px; }
+        .hist-empty { text-align: center; color: var(--text-subdued); margin: 40px 0; }
+        #hist-more { margin: 20px auto 0 auto; max-width: 240px; }
+        @media (max-width: 600px) {
+            .hist-row { flex-wrap: wrap; }
+            .hist-meta { width: 100%; text-align: left; display: flex; gap: 10px; align-items: center; }
+            .hist-spk { margin-top: 0; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="main-container">
+        <div id="mobile-overlay" class="sidebar-overlay" onclick="toggleMobileMenu()"></div>
+        <nav class="sidebar"></nav>
+
+        <main class="main-view">
+            <div class="top-bar">
+                <div style="display: flex; flex: 1; min-width: 0; align-items: center;">
+                    <button class="mobile-menu-btn" onclick="toggleMobileMenu(event)">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <h2 class="section-title" style="margin: 0; padding-left: 15px;">
+                        <i class="fas fa-clock-rotate-left" style="color: var(--spotify-green); margin-right: 10px;"></i> Historique d'écoute
+                    </h2>
+                </div>
+                <div class="search-container" style="margin: 0 15px;">
+                    <input type="text" id="hist-search" class="search-input" placeholder="Titre, artiste, album…" autocomplete="off">
+                </div>
+            </div>
+
+            <div class="hist-wrap">
+                <div id="hist-count" class="hist-sub" style="margin-bottom: 14px;"></div>
+                <div id="hist-list"></div>
+                <button id="hist-more" class="btn-action hidden" onclick="loadHistory(false)">
+                    <i class="fas fa-chevron-down"></i> Charger plus
+                </button>
+            </div>
+        </main>
+    </div>
+
+    <footer class="player-bar"></footer>
+
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="js/app.js"></script>
+
+    <script>
+        const PAGE_SIZE = 50;
+        let items = [], total = 0, query = '', searchTimer = null;
+
+        const dayFmt = new Intl.DateTimeFormat('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+        const timeFmt = new Intl.DateTimeFormat('fr-FR', { hour: '2-digit', minute: '2-digit' });
+        const fullFmt = new Intl.DateTimeFormat('fr-FR', { dateStyle: 'full', timeStyle: 'medium' });
+
+        function dayLabel(d) {
+            const startOf = x => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+            const diff = Math.round((startOf(new Date()) - startOf(d)) / 86400000);
+            if (diff === 0) return "Aujourd'hui";
+            if (diff === 1) return "Hier";
+            return dayFmt.format(d);
+        }
+
+        function el(tag, cls, text) {
+            const e = document.createElement(tag);
+            if (cls) e.className = cls;
+            if (text !== undefined) e.textContent = text;
+            return e;
+        }
+
+        function buildRow(it) {
+            const d = new Date(it.listened_at * 1000);
+            const row = el('div', 'hist-row');
+            row.title = fullFmt.format(d);
+
+            const cover = el('div', 'hist-cover');
+            const placeholder = () => { cover.innerHTML = '<i class="fas fa-music"></i>'; };
+            if (it.cover) {
+                const img = document.createElement('img');
+                img.loading = 'lazy';
+                img.alt = '';
+                img.onerror = placeholder;
+                img.src = it.cover;
+                cover.appendChild(img);
+            } else placeholder();
+
+            const text = el('div', 'hist-text');
+            text.appendChild(el('div', 'hist-track', it.track));
+            text.appendChild(el('div', 'hist-sub', [it.artist, it.album].filter(Boolean).join(' · ') || '—'));
+
+            const meta = el('div', 'hist-meta');
+            meta.appendChild(el('div', 'hist-time', timeFmt.format(d)));
+            if (it.speakers) {
+                const spk = el('div', 'hist-spk');
+                spk.innerHTML = '<i class="fas fa-volume-up"></i>';
+                spk.appendChild(document.createTextNode(it.speakers));
+                spk.title = it.speakers;
+                meta.appendChild(spk);
+            }
+
+            row.append(cover, text, meta);
+            return row;
+        }
+
+        function renderHistory() {
+            const list = document.getElementById('hist-list');
+            list.replaceChildren();
+            if (!items.length) {
+                list.appendChild(el('div', 'hist-empty', query ? 'Aucun résultat.' : "Aucune écoute enregistrée pour le moment."));
+            }
+            let lastDay = '';
+            for (const it of items) {
+                const label = dayLabel(new Date(it.listened_at * 1000));
+                if (label !== lastDay) {
+                    list.appendChild(el('div', 'hist-day', label));
+                    lastDay = label;
+                }
+                list.appendChild(buildRow(it));
+            }
+            document.getElementById('hist-count').textContent = total ? `${total} écoute${total > 1 ? 's' : ''}` : '';
+            document.getElementById('hist-more').classList.toggle('hidden', items.length >= total);
+        }
+
+        // reset=true : recharge depuis le début en gardant le nombre d'écoutes déjà affichées
+        async function loadHistory(reset) {
+            const limit = reset ? Math.min(Math.max(PAGE_SIZE, items.length), 200) : PAGE_SIZE;
+            const offset = reset ? 0 : items.length;
+            try {
+                const r = await fetch(`/api/history?limit=${limit}&offset=${offset}&q=${encodeURIComponent(query)}`);
+                if (!r.ok) throw new Error('HTTP ' + r.status);
+                const data = await r.json();
+                total = data.total;
+                items = reset ? data.items : items.concat(data.items);
+                renderHistory();
+            } catch (e) {
+                console.error('Erreur historique :', e);
+            }
+        }
+
+        document.getElementById('hist-search').addEventListener('input', (e) => {
+            clearTimeout(searchTimer);
+            searchTimer = setTimeout(() => { query = e.target.value.trim(); items = []; loadHistory(true); }, 300);
+        });
+
+        loadHistory(true);
+        setInterval(() => { if (!document.hidden) loadHistory(true); }, 20000);
+    </script>
+</body>
+</html>

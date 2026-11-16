@@ -5,6 +5,8 @@ from shared import speakers, socketio
 import requests
 import time
 import radios
+from listenbrainz import scrobble_track
+from history import record_listen, forget_speaker
 
 class BoseWebsocketManager:
     def __init__(self):
@@ -12,8 +14,6 @@ class BoseWebsocketManager:
 
     def fetch_initial_state(self, ip):
         try:
-            # On utilise une Session pour réutiliser la connexion TCP (Keep-Alive)
-            # Cela évite de saturer le serveur web de la Bose (bug du port 8090)
             with requests.Session() as session:
                 resp_np = session.get(f"http://{ip}:8090/nowPlaying", timeout=5.0)
                 if resp_np.status_code == 200:
@@ -217,6 +217,7 @@ class BoseWebsocketManager:
                 speakers[ip]['supported_sources'] = supported_srcs
                 
                 if source == 'STANDBY':
+                    forget_speaker(ip)
                     speakers[ip]['state'] = 'STANDBY'
                     speakers[ip]['track'] = ''
                     speakers[ip]['artist'] = ''
@@ -231,13 +232,16 @@ class BoseWebsocketManager:
                     speakers[ip]['state'] = 'ON'
                     
                     track = now_playing.find('track')
-                    speakers[ip]['track'] = track.text if track is not None else "Prêt"
+                    track_text = track.text if track is not None else "Prêt"
+                    speakers[ip]['track'] = track_text
                     
                     artist = now_playing.find('artist')
-                    speakers[ip]['artist'] = artist.text if artist is not None else ""
+                    artist_text = artist.text if artist is not None else ""
+                    speakers[ip]['artist'] = artist_text
                     
                     album = now_playing.find('album')
-                    speakers[ip]['album'] = album.text if album is not None else ""
+                    album_text = album.text if album is not None else ""
+                    speakers[ip]['album'] = album_text
                     
                     art = now_playing.find('art')
                     speakers[ip]['cover'] = art.text if art is not None else ""
@@ -258,8 +262,8 @@ class BoseWebsocketManager:
                         speakers[ip]['repeatSetting'] = repeat_setting.text
 
                     play_status = now_playing.find('playStatus')
-                    if play_status is not None:
-                        speakers[ip]['playStatus'] = play_status.text
+                    play_status_val = play_status.text if play_status is not None else ""
+                    speakers[ip]['playStatus'] = play_status_val
 
                     time_node = now_playing.find('time')
                     if time_node is not None:
@@ -274,9 +278,13 @@ class BoseWebsocketManager:
                             display_source = "LOCAL_INTERNET_RADIO (Fichiers locaux)"
                             speakers[ip]['source'] = display_source 
                             
-                            speakers[ip]['track'] = current_track.get('title', speakers[ip]['track'])
-                            speakers[ip]['artist'] = current_track.get('artist', 'Inconnu')
-                            speakers[ip]['album'] = current_track.get('album', '')
+                            track_text = current_track.get('title', speakers[ip]['track'])
+                            artist_text = current_track.get('artist', 'Inconnu')
+                            album_text = current_track.get('album', '')
+                            
+                            speakers[ip]['track'] = track_text
+                            speakers[ip]['artist'] = artist_text
+                            speakers[ip]['album'] = album_text
                             
                             total_secs = current_track.get('duration_secs', 0)
                             if total_secs > 0:
@@ -285,6 +293,22 @@ class BoseWebsocketManager:
                             cover_url = current_track.get('cover')
                             if cover_url and cover_url != "SHOW_DEFAULT_IMAGE":
                                 speakers[ip]['cover'] = cover_url
+
+                    # Déclenchement du scrobbling ListenBrainz si la lecture est active
+                    if play_status_val == 'PLAY_STATE':
+                        threading.Thread(
+                            target=scrobble_track,
+                            args=(ip, artist_text, track_text, album_text),
+                            daemon=True
+                        ).start()
+                        # Historique d'écoute local (SQLite)
+                        threading.Thread(
+                            target=record_listen,
+                            args=(ip, artist_text, track_text, album_text),
+                            daemon=True
+                        ).start()
+                    elif play_status_val == 'STOP_STATE':
+                        forget_speaker(ip)
 
                     speakers[ip]['show_title'] = None
                     speakers[ip]['show_desc'] = None
@@ -318,19 +342,16 @@ bose_ws_manager = BoseWebsocketManager()
 
 # ---------------------------------------------------------
 # Radio France : rafraîchissement périodique du bloc « en direct »
-# (l'enceinte n'émet aucun événement quand un morceau FIP ou une émission change)
 # ---------------------------------------------------------
 RF_REFRESH_SECONDS = 20
 RADIO_SOURCES = ['LOCAL_INTERNET_RADIO', 'TUNEIN', 'RADIO_BROWSER']
 
 def refresh_radiofrance_shows():
-    """Met à jour show_title/show_desc/show_image des enceintes sur une antenne Radio France.
-    Les appels réseau sont mis en cache par radios.get_radiofrance_live(). Retourne True si quelque chose a changé."""
     changed = False
     for ip, spk in list(speakers.items()):
         if spk.get('state') != 'ON' or spk.get('source') not in RADIO_SOURCES:
             continue
-        station_name = str(spk.get('track', '')).upper() + " " + str(spk.get('artist', '')).upper()
+        station_name = str(spk.get('token', '')).upper() + " " + str(spk.get('artist', '')).upper()
         rf_station = radios.detect_radiofrance_station(spk.get('playlist', ''), station_name)
         if not rf_station:
             continue

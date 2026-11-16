@@ -28,21 +28,36 @@
             box-shadow: 0 10px 30px rgba(0,0,0,0.3);
         }
         
-        .np-cover-wrapper {
-            width: 250px;
-            height: 250px;
-            flex-shrink: 0;
-            background-color: #333;
-            border-radius: 8px;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.5);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            overflow: hidden;
-            font-size: 64px;
-            color: var(--text-subdued);
-        }
-        .np-cover-img { width: 100%; height: 100%; object-fit: contain; display: none; }
+		.np-cover-wrapper {
+			width: 250px;
+			height: 250px;
+			flex-shrink: 0;
+			background-color: #333;
+			border-radius: 8px;
+			box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			overflow: hidden;
+			font-size: 64px;
+			color: var(--text-subdued);
+		}
+
+		/* Forcer le lien à occuper 100% du conteneur parent */
+		#np-cover-link {
+			width: 100%;
+			height: 100%;
+			display: block;
+		}
+
+		/* Remplissage intégral et centrage du crop */
+		.np-cover-img {
+			width: 100%;
+			height: 100%;
+			object-fit: cover; /* Remplace 'contain' pour éliminer les bandes vides */
+			display: block;
+		}
+
         
         .np-details { flex: 1; min-width: 0; }
         .np-track { font-size: 36px; font-weight: bold; margin-bottom: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -290,10 +305,7 @@
             <div class="now-playing-container hidden" id="nowPlayingCard">
                 <div class="np-cover-wrapper">
                     <i class="fas fa-music" id="np-cover-fallback"></i>
-				  <a id="np-cover-link" href="" target="_blank">
                     <img id="np-cover-img" class="np-cover-img" src="" alt="Cover"/>
-                  </a>
-
                 </div>
                 
                 <div class="np-details">
@@ -301,7 +313,16 @@
                     <div class="np-artist" id="np-artist">Veuillez sélectionner une enceinte</div>
                     
                     <div class="np-meta-grid">
-                        <div>Album :</div><span id="np-album">-</span>
+                        <div>Album :</div>
+						<div style="display: flex; align-items: center; justify-content: space-between; min-width: 0; gap: 10px;">
+							<span id="np-album" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">-</span>
+							<div id="np-links" style="display: none; align-items: center; gap: 6px; flex-shrink: 0;">
+								<a id="np-link-spotify" href="" target="_blank"><img style="border: 0px solid ; width: 24px; height: 24px;" src="/img/spotify.png" alt=""></a>
+								<a id="np-link-ytmusic" href="" target="_blank"><img style="border: 0px solid ; width: 24px; height: 24px;" src="/img/ytmusic.png" alt=""></a>
+								<a id="np-link-discogs" href="" target="_blank"><img style="border: 0px solid ; width: 24px; height: 24px;" src="/img/discogs.png" alt=""></a>
+								<a id="np-link-mbrainz" href="" target="_blank"><img style="border: 0px solid ; width: 24px; height: 24px;" src="/img/MusicBrainz.png" alt=""></a>
+							</div>
+						</div>
                         <div>Playlist :</div><span id="np-playlist">-</span>
                         <div>Source :</div><span id="np-source">-</span>
                         <div>Statut :</div><span id="np-status">-</span>
@@ -353,7 +374,8 @@
         document.addEventListener("DOMContentLoaded", async () => {
             await loadComponent(null, "components/remotemid.svg", "#mid-remote-wrapper");
             
-            window.sendKey = async function(keyName) { if(typeof sendCommand === "function") await sendCommand(keyName); };
+
+			window.sendKey = async function(keyName) { if(typeof sendCommand === "function") await sendCommand(keyName); };
             window.sendPreset = async function(id) { if(typeof playPreset === "function") await playPreset(id); };
             
             onStateUpdated();
@@ -403,16 +425,46 @@
             document.getElementById("np-track").textContent = spk.track || "Prêt";
             document.getElementById("np-artist").textContent = spk.artist || "Artiste inconnu";
             document.getElementById("np-album").textContent = spk.album || "-";
+
+            // Les liens (Spotify, YT Music, Discogs, MusicBrainz) ne s'affichent que si un album est renseigné
+            const npLinks = document.getElementById("np-links");
+            if (npLinks) {
+                const hasAlbum = !!(spk.album && spk.album.trim() && spk.album.trim() !== "-");
+                npLinks.style.display = hasAlbum ? "flex" : "none";
+            }
             document.getElementById("np-playlist").textContent = spk.playlist || "Flux Direct";
             document.getElementById("np-source").textContent = spk.source || "-";
 
-            const coverLink = document.getElementById("np-cover-link");
-            if (coverLink) {
+            const spotLink = document.getElementById("np-link-spotify");
+            if (spotLink) {
                 const artist = (spk.artist && spk.artist !== "Artiste inconnu") ? spk.artist : "";
                 const album = (spk.album && spk.album !== "-") ? spk.album : "";
-                const searchQuery = encodeURIComponent(`${album},${artist}`.trim());
-                coverLink.href = `https://music.youtube.com/search?q=${searchQuery}`;
-                coverLink.href = `https://music.youtube.com/search?q=${searchQuery}`;
+                const searchQuery = encodeURIComponent(`${artist} - album: ${album}`.trim());
+                spotLink.href = `https://open.spotify.com/search/${searchQuery}`;
+            }
+			
+            const ytmLink = document.getElementById("np-link-ytmusic");
+            if (ytmLink) {
+                const artist = (spk.artist && spk.artist !== "Artiste inconnu") ? spk.artist : "";
+                const album = (spk.album && spk.album !== "-") ? spk.album : "";
+                const searchQuery = encodeURIComponent(`${artist} - ${album}`.trim());
+                ytmLink.href = `https://music.youtube.com/search?q=${searchQuery}`;
+            }
+			
+            const discogsLink = document.getElementById("np-link-discogs");
+            if (discogsLink) {
+                const artist = (spk.artist && spk.artist !== "Artiste inconnu") ? spk.artist : "";
+                const album = (spk.album && spk.album !== "-") ? spk.album : "";
+                const searchQuery = encodeURIComponent(`"${artist}" - "${album}"`.trim());
+                discogsLink.href = `https://www.discogs.com/fr/search?q=${searchQuery}`;
+            }
+			
+            const mbrainzLink = document.getElementById("np-link-mbrainz");
+            if (mbrainzLink) {
+                const artist = (spk.artist && spk.artist !== "Artiste inconnu") ? spk.artist : "";
+                const album = (spk.album && spk.album !== "-") ? spk.album : "";
+                const searchQuery = encodeURIComponent(`"release:"${album}" AND artist:"${artist}"`.trim());
+                mbrainzLink.href = `https://musicbrainz.org/ws/2/release/?query=${searchQuery}&fmt=json`;
             }
 			
 			const progressContainer = document.querySelector(".progress-container");
@@ -477,29 +529,6 @@
 
             updateBigRemoteUI(spk);
         }
-
-        setInterval(function runFluidTimer() {
-            if (typeof getSelectedIps !== "function" || !globalData.speakers) return;
-            const ips = getSelectedIps();
-            if (ips.length === 0) return;
-            const spk = globalData.speakers[ips[0]];
-            if (!spk) return;
-
-            if (spk.time_total && parseInt(spk.time_total) > 0) {
-                let pos = spk.local_time_base || 0;
-                
-                if (spk.playStatus === "PLAY_STATE") {
-                    pos += (Date.now() - (spk.local_time_anchor || Date.now())) / 1000;
-                }
-                
-                let tot = parseInt(spk.time_total);
-                if (pos > tot) pos = tot;
-                
-                refreshProgressDOM(pos, tot);
-            } else {
-                refreshProgressDOM(0, 0);
-            }
-        }, 250);
 
         function refreshProgressDOM(elapsed, total) {
             const progressFill = document.getElementById("np-progress-fill");

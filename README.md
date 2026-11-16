@@ -1,4 +1,4 @@
-#🔊 Bose SoundTouch Controller & Media Center (sc_tools)
+# 🔊 Bose SoundTouch Controller & Media Center (sc_tools)
 
 [![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://www.python.org/)
 [![Flask](https://img.shields.io/badge/Framework-Flask%2FSocket.IO-green.svg)](https://flask.palletsprojects.com/)
@@ -41,7 +41,7 @@ L'application agit comme un hub multimédia permettant le contrôle multi-room, 
 
 ---
 
-## Copies d'écrans
+## Copies d'écran
 
 | En cours | Webradios |
 |:-----------:|:---------:|
@@ -50,8 +50,6 @@ L'application agit comme un hub multimédia permettant le contrôle multi-room, 
 | Smartphone | Administration |
 |:-----------:|:---------:|
 | ![dlna](docs/screenshots/dlna.responsive.png) | ![tools](docs/screenshots/tools.png) |
-
-
 
 ---
 
@@ -87,8 +85,8 @@ L'application agit comme un hub multimédia permettant le contrôle multi-room, 
 │   └── virtual_soundtouch.py      # Émulateur/Virtualiseur d'enceinte SoundTouch
 ├── docker-compose.yml             # Orchestration du conteneur Docker
 ├── Dockerfile                     # Image Docker multi-arch (ARM / x86)
-├── tools                          # Dossiers contenant de nombreux programmes liés à l'écosystème SoundTouch/Raspberry pi
-│   └── py                         # Dossier de programmes en python
+├── tools                          # Dossier contenant de nombreux programmes liés à l'écosystème SoundTouch / Raspberry Pi
+│   └── py                         # Dossier de programmes en Python
 └── www                            # Interface utilisateur Web Frontend
     ├── alarm.html                 # Interface de programmation des alarmes
     ├── components/                # Éléments HTML réutilisables (footer, sidebar)
@@ -113,42 +111,40 @@ L'application agit comme un hub multimédia permettant le contrôle multi-room, 
 
 ### Prérequis
 
-* Un ordinateur ou carte de développement : **Raspberry Pi (zéro 2W/3/4/5)**, PC sous **Linux (Ubuntu/Debian)** ou **Windows**. (Testé et développé sur Raspberry PI 3 B+, testé sur Raspberry zéro 2W)
-* **Docker** & **Docker Compose** (Recommandé) OU **Python 3.11+**.
-* Le dépôt **Soundcork** https://github.com/deborahgu/soundcork.git voir tuto docs/SoundcorkSetup.html
+* Un ordinateur ou une carte de développement : **Raspberry Pi (Zero 2W/3/4/5)**, PC sous **Linux (Ubuntu/Debian)** ou **Windows** (testé et développé sur Raspberry Pi 3 B+, testé sur Raspberry Zero 2W).
+* **Docker** & **Docker Compose** (recommandé) OU **Python 3.11+**.
+* Le dépôt **Soundcork** (https://github.com/deborahgu/soundcork.git) — voir le tutoriel `docs/SoundcorkSetup.html`.
 * Les enceintes Bose SoundTouch doivent être allumées et connectées sur le même sous-réseau local (WLAN ou LAN).
 
-**Tuto d'installation Raspberry Pi** : docs/SoundcorkSetup.html
-
-
+**Tutoriel d'installation Raspberry Pi** : `docs/SoundcorkSetup.html`
 
 ---
 
 ### Méthode 1 : Déploiement via Docker Compose (Recommandé)
 
 1. **Cloner le dépôt Git :**
+
 ```bash
 git clone [https://github.com/phiDu-fr/sc_tools.git](https://github.com/phiDu-fr/sc_tools.git)
 cd sc_tools
 
 ```
 
-
 2. **Structure des dossiers de données :**
 S'assurer que le dossier `/home/pi/sc_tools` existe sur le système hôte (ou ajuster les volumes dans `docker-compose.yml`) :
+
 ```bash
 mkdir -p /home/pi/sc_tools/rf_podcasts
 mkdir -p /home/pi/sc_tools/data
 
 ```
 
-
 3. **Lancer le conteneur Docker :**
+
 ```bash
 docker-compose up -d --build
 
 ```
-
 
 4. **Accéder à l'application :**
 Ouvrir un navigateur web à l'adresse : `http://<IP_DU_RASPBERRY_OU_PC>/` (Port 80).
@@ -158,38 +154,35 @@ Ouvrir un navigateur web à l'adresse : `http://<IP_DU_RASPBERRY_OU_PC>/` (Port 
 ### Méthode 2 : Installation Manuelle (Python Virtualenv)
 
 1. **Créer un environnement virtuel Python :**
+
 ```bash
 python3 -m venv venv
-source venv/bin/dev/activate  # Sous Linux/Raspberry
-# venv\\Scripts\\activate      # Sous Windows
+source venv/bin/activate       # Sous Linux/Raspberry Pi
+# venv\Scripts\activate        # Sous Windows
 
 ```
 
-
 2. **Installer les dépendances :**
+
 ```bash
 pip install flask flask-socketio requests apscheduler upnpclient websocket-client fastapi uvicorn
 
 ```
 
-
 3. **Lancer le serveur d'application :**
+
 ```bash
 python app/app.py
 
 ```
 
-
-
 ---
 
 ## 🔑 Configuration de base
 
-1. Installer **Soundcork** https://github.com/deborahgu/soundcork.git voir : docs/SoundcorkSetup.html
-2. Renommer le fichier `.env.private` en `.env`
-3. Modifier `.env` pour l'adapter en l'environnement.
-
-
+1. Installer **Soundcork** (https://github.com/deborahgu/soundcork.git) — voir : `docs/SoundcorkSetup.html`.
+2. Renommer le fichier `.env.private` en `.env`.
+3. Modifier `.env` pour l'adapter à l'environnement.
 
 ---
 
@@ -200,50 +193,47 @@ Pour utiliser le moteur de recherche d'émissions et le téléchargeur Radio Fra
 1. Obtenir une clé d'API sur le portail développeur Radio France ([Open API Radio France](https://developers.radiofrance.fr/)).
 2. Renseigner la clé dans le fichier `.env`.
 
-
-
 ---
 
 ## 🔑 Configuration de la Clé ListenBrainz
 
-Si vous souhaitez utiliser cette fonctionnalté, payante par dons
+Si vous souhaitez utiliser cette fonctionnalité (gratuite, financée par les dons) :
 
-1. Activer le service dans .env `LISTENBRAINZ=on`
-2. Obtenir un jeton sur ([ListenBrainz ](https://listenbrainz.org/settings/)) après avoir créé un compte
-3. Saisir le jeton généré dans .env `LISTENBRAINZ_TOKEN=votre_token_listenbrainz_ici`
-
+1. Activer le service dans `.env` : `LISTENBRAINZ=on`
+2. Obtenir un jeton sur [ListenBrainz](https://listenbrainz.org/settings/) après avoir créé un compte.
+3. Saisir le jeton généré dans `.env` : `LISTENBRAINZ_TOKEN=votre_token_listenbrainz_ici`
 
 ---
 
 ## 🚀 Utilisation
 
-1. **Partie gauche (`sidebar`)** : Visualiser toutes les enceintes Bose détectées sur le réseau local, leur état (en marche, éteinte, standby), ajuster le volume individuel, et contrôler la lecture, créer des groupes (multiroom), donne l'état des batteries si..., accès aux autres fonctionnalités.
-2. **Pied de page (`footbar`)** : Visualiser le morceau ou la radio qui passe actuellement, barre de volume, lien à la page diffusion actuelle (`now.html`) sur image 
-3. **Webradios (`radios.html`)** : Gestion des webradios, recherche dans la boîte de recherche et lecture, possibilité de l'enregistrer dans les favoris ou de supprimer des favoris.
-4. **Podcasts (`podcasts.html`)** : Gestion des podcasts, recherche via l'API iTunes, ou via le bouton `Ouvrir le téléchargement Radio France`.
-5. **Diffusion réseau (`dlna_browser.html`)** : Minidlna implémenté dans ce système ou autre DLNA/UPNP découvert par les enceintes (doit être reconnu dans le fichier Sources.xml), utiliser `tools/py/auto_add_sources.py`.
-6. **Musique enregistrer (`dlna_browser.html`)** : afin de lire de la musique depuis un support connecté sur le Raspberry ou le présent serveur.
-7. **Diffuser depuis l'appareil (`upload.html`)** : Envoyer à la lecture un fichier mp3 sur une enceinte.
-8. **Télécommande (`remote.html`)** : Télécommande Bose Soundtouch.
-9. **Historique (`history.html`)** : Historique des écoutes 
-10. **Réveil (`alarm.html`)** : Faire de votre enceinte un radio réveil : choix de l'enceinte, choix du préréglage, heure et jours d'activation.
-11. **Configuration (`config.html`)** : changer les paramètres du l'enceinte sélectionnée.
-12. **Administration (`tools`)** : De nombreux utilitaire pour gérer l'écosystème, directement depuis l'interface web.
-
-
+1. **Partie gauche (`sidebar`)** : Visualiser toutes les enceintes Bose détectées sur le réseau local, leur état (en marche, éteinte, standby), ajuster le volume individuel, contrôler la lecture, créer des groupes (multiroom), voir l'état des batteries (si applicable) et accéder aux autres fonctionnalités.
+2. **Pied de page (`footbar`)** : Visualiser le morceau ou la radio en cours de lecture, barre de volume, lien vers la page de diffusion actuelle (`now.html`) en cliquant sur l'image.
+3. **Webradios (`radios.html`)** : Gestion des webradios, recherche dans la boîte de recherche et lecture, possibilité de les enregistrer dans les favoris ou de les supprimer des favoris.
+4. **Podcasts (`podcasts.html`)** : Gestion des podcasts, recherche via l'API iTunes ou via le bouton `Ouvrir le téléchargement Radio France`.
+5. **Diffusion réseau (`dlna_browser.html`)** : MiniDLNA implémenté dans ce système ou autre serveur DLNA/UPnP découvert par les enceintes (doit être reconnu dans le fichier `Sources.xml` ; utiliser `tools/py/auto_add_sources.py`).
+6. **Musique enregistrée (`dlna_browser.html`)** : Permet de lire de la musique depuis un support connecté sur le Raspberry Pi ou le présent serveur.
+7. **Diffuser depuis l'appareil (`upload.html`)** : Envoyer un fichier MP3 en lecture sur une enceinte.
+8. **Télécommande (`remote.html`)** : Télécommande Bose SoundTouch.
+9. **Historique (`history.html`)** : Historique des écoutes.
+10. **Réveil (`alarm.html`)** : Faire de votre enceinte un radio-réveil : choix de l'enceinte, choix du préréglage, heure et jours d'activation.
+11. **Configuration (`config.html`)** : Changer les paramètres de l'enceinte sélectionnée.
+12. **Administration (`tools`)** : De nombreux utilitaires pour gérer l'écosystème, directement depuis l'interface web.
 
 ---
 
 ## 🚀 Quelques fonctionnalités
 
-1. **Multiroom** En mode ordinateur : Dans le sidebar sélectionner l'enceinte maître puis Ctrl + clic sur les autres enceintes participantes, enfin clic sur `Grouper`.
-2. **Multiroom** En mode smartphone : Dans le sidebar sélectionner l'enceinte maître puis appui long sur la 2ème enceinte participante, appui sur les suivantes, enfin appui sur `Grouper`.
-3. **Enregistrement de présélection** : sur les écrans `Lecture en cours, Webradios, Diffusion réseau, Musique enregistrer, Diffuser depuis l'appareil, Télécommande, Configuration`, pour mettre en présélection le flux en cours, appuyer sur le bouton en bas à droite de la télécommande (cercles) et le numéro choisi.
-
-
+1. **Multiroom (mode ordinateur)** : Dans la sidebar, sélectionner l'enceinte maître puis `Ctrl + clic` sur les autres enceintes participantes, et enfin cliquer sur `Grouper`.
+2. **Multiroom (mode smartphone)** : Dans la sidebar, sélectionner l'enceinte maître puis faire un appui long sur la 2e enceinte participante, un appui simple sur les suivantes, et enfin appuyer sur `Grouper`.
+3. **Enregistrement de présélection** : Sur les écrans `Lecture en cours`, `Webradios`, `Diffusion réseau`, `Musique enregistrée`, `Diffuser depuis l'appareil`, `Télécommande` et `Configuration`, pour mettre en présélection le flux en cours, appuyer sur le bouton en bas à droite de la télécommande (cercles) puis sur le numéro choisi.
 
 ---
 
 ## 📄 Licence
 
 Ce projet est sous licence MIT. Libre d'utilisation, de modification et de distribution.
+
+```
+
+```

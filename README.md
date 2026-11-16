@@ -64,6 +64,8 @@ L'application agit comme un hub multimédia permettant le contrôle multi-room, 
 │   ├── app.py                     # Point d'entrée Flask / SocketIO & enregistrement des Blueprints
 │   ├── bose_websocket.py          # Client WebSocket natif Bose (ws://ip:8080) & parsing XML
 │   ├── dlna.py                    # Découverte SSDP, navigateur UPnP/DLNA, proxy audio & file d'attente
+│   ├── history.py                 # Stocke les données qui passent par les enceintes
+│   ├── listenbrainz.py            # Transmet à `listenbrainz.org` les titres écoutés sur les enceintes
 │   ├── podcasts.py                # Gestionnaire Apple Podcasts, stockage local & upload direct
 │   ├── radiofrance_downloader/    # Module complet d'intégration Radio France (GraphQL API & CLI)
 │   │   ├── api.py                 # Client GraphQL officiel Radio France
@@ -202,19 +204,31 @@ Pour utiliser le moteur de recherche d'émissions et le téléchargeur Radio Fra
 
 ---
 
+## 🔑 Configuration de la Clé ListenBrainz
+
+Si vous souhaitez utiliser cette fonctionnalté, payante par dons
+
+1. Activer le service dans .env `LISTENBRAINZ=on`
+2. Obtenir un jeton sur ([ListenBrainz ](https://listenbrainz.org/settings/)) après avoir créé un compte
+3. Saisir le jeton généré dans .env `LISTENBRAINZ_TOKEN=votre_token_listenbrainz_ici`
+
+
+---
+
 ## 🚀 Utilisation
 
 1. **Partie gauche (`sidebar`)** : Visualiser toutes les enceintes Bose détectées sur le réseau local, leur état (en marche, éteinte, standby), ajuster le volume individuel, et contrôler la lecture, créer des groupes (multiroom), donne l'état des batteries si..., accès aux autres fonctionnalités.
-2. **Pied de page (`footbar`)** : Visualiser le morceau ou la radio qui passe actuellement, barre de volume.
+2. **Pied de page (`footbar`)** : Visualiser le morceau ou la radio qui passe actuellement, barre de volume, lien à la page diffusion actuelle (`now.html`) sur image 
 3. **Webradios (`radios.html`)** : Gestion des webradios, recherche dans la boîte de recherche et lecture, possibilité de l'enregistrer dans les favoris ou de supprimer des favoris.
 4. **Podcasts (`podcasts.html`)** : Gestion des podcasts, recherche via l'API iTunes, ou via le bouton `Ouvrir le téléchargement Radio France`.
 5. **Diffusion réseau (`dlna_browser.html`)** : Minidlna implémenté dans ce système ou autre DLNA/UPNP découvert par les enceintes (doit être reconnu dans le fichier Sources.xml), utiliser `tools/py/auto_add_sources.py`.
 6. **Musique enregistrer (`dlna_browser.html`)** : afin de lire de la musique depuis un support connecté sur le Raspberry ou le présent serveur.
 7. **Diffuser depuis l'appareil (`upload.html`)** : Envoyer à la lecture un fichier mp3 sur une enceinte.
 8. **Télécommande (`remote.html`)** : Télécommande Bose Soundtouch.
-9. **Réveil (`alarm.html`)** : Faire de votre enceinte un radio réveil : choix de l'enceinte, choix du préréglage, heure et jours d'activation.
-10. **Configuration (`config.html`)** : changer les paramètres du l'enceinte sélectionnée.
-11. **Administration (`tools`)** : De nombreux utilitaire pour gérer l'écosystème, directement depuis l'interface web.
+9. **Historique (`history.html`)** : Historique des écoutes 
+10. **Réveil (`alarm.html`)** : Faire de votre enceinte un radio réveil : choix de l'enceinte, choix du préréglage, heure et jours d'activation.
+11. **Configuration (`config.html`)** : changer les paramètres du l'enceinte sélectionnée.
+12. **Administration (`tools`)** : De nombreux utilitaire pour gérer l'écosystème, directement depuis l'interface web.
 
 
 

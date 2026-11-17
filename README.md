@@ -13,6 +13,11 @@ L'application agit comme un hub multimédia permettant le contrôle multi-room, 
 
 ## 🌟 Fonctionnalités Principales
 
+### 🫶 Remplace l'application Bose SoundTouch et bien plus
+* **Associé au dépôt Soundcork** (https://github.com/deborahgu/soundcork.git)
+* **Solution légère, économique** rend à vos équipements Bose Soundtouch toutes les fonctionnalités d'avant le 6 mai 2026
+* Ajoute un grans nombre de fonctionnalités** à découvrir ci dessous
+
 ### 📻 Contrôle Bose SoundTouch & Temps Réel
 * **WebSocket Native Bose (`ws://<ip>:8080/`)** : Écoute passive et réactive en temps réel de l'état de chaque enceinte (statut, volume, piste, pochette, statut de batterie, masters/slaves de zones multi-room).
 * **Protocole Propriétaire `gabbo`** : Connexion temps réel réinjectée vers le navigateur Web via **Socket.IO**.
@@ -66,15 +71,6 @@ L'application agit comme un hub multimédia permettant le contrôle multi-room, 
 │   ├── listenbrainz.py            # Transmet à `listenbrainz.org` les titres écoutés sur les enceintes
 │   ├── podcasts.py                # Gestionnaire Apple Podcasts, stockage local & upload direct
 │   ├── radiofrance_downloader/    # Module complet d'intégration Radio France (GraphQL API & CLI)
-│   │   ├── api.py                 # Client GraphQL officiel Radio France
-│   │   ├── app.py                 # Interface FastAPI dédiée au téléchargeur
-│   │   ├── cli.py                 # Interface en ligne de commande
-│   │   ├── config.py              # Chargement de la configuration (clef API, dossiers)
-│   │   ├── downloader.py          # Gestionnaire de téléchargements HTTP/MP3
-│   │   ├── exceptions.py          # Exceptions personnalisées du module
-│   │   ├── models.py              # Modèles de données DataClasses (Show, Episode, Station)
-│   │   ├── rss.py                 # Générateur de flux RSS locaux
-│   │   └── scraper.py             # Scraper de secours
 │   ├── radios.py                  # Gestion des WebRadios & Métadonnées Live Radio France
 │   ├── rf_dwl.py                  # Blueprint de pont entre Flask et Radio France Downloader
 │   ├── shared.py                  # État partagé (instances scheduler, socketio, dictionnaire speakers)
@@ -82,26 +78,27 @@ L'application agit comme un hub multimédia permettant le contrôle multi-room, 
 │   ├── tools.py                   # Fonctions d'administration réseau & outils de diagnostic
 │   ├── update_radio_logo.py       # Script d'actualisation des logos radios
 │   ├── utils.py                   # Utilitaires réseau (obtention IP locale, etc.)
-│   └── virtual_soundtouch.py      # Émulateur/Virtualiseur d'enceinte SoundTouch
+│   └── virtual_soundtouch.py      # Émulateur/Virtualiseur d'enceinte SoundTouch (voir phiDu-fr/sc_virtual.git)
 ├── docker-compose.yml             # Orchestration du conteneur Docker
 ├── Dockerfile                     # Image Docker multi-arch (ARM / x86)
 ├── tools                          # Dossier contenant de nombreux programmes liés à l'écosystème SoundTouch / Raspberry Pi
 │   └── py                         # Dossier de programmes en Python
 └── www                            # Interface utilisateur Web Frontend
-    ├── alarm.html                 # Interface de programmation des alarmes
-    ├── components/                # Éléments HTML réutilisables (footer, sidebar)
-    ├── config.html                # Configuration des paramètres réseau et clés API
+    ├── alarm.html                 # Interface de programmation des alarmes, réveil
+    ├── components/                # Éléments HTML réutilisables (footer, sidebar, images SVG)
+    ├── config.html                # Configuration des paramètres des équipements
     ├── css/global.css             # Feuille de style globale responsive
-    ├── dlna.html / dlna_browser.html # Lecteur & explorateur de serveur multimédia
-    ├── index.html                 # Tableau de bord principal
-    ├── js/                        # Scripts JS (app.js, player.js)
-    ├── now.html                   # Écran "Now Playing" plein écran
-    ├── player.html                # Lecteur audio Web
+    ├── dlna_browser.html          # Lecteur & explorateur de serveur multimédia réseau
+    ├── dlna.html                  # Lecteur & explorateur de serveur musical local
+    ├── history.html               # Historique des écoutes
+    ├── js/app.js                  # Scripts JS
+    ├── now.html                   # Écran "Now Playing" plein écran, avec paroles, liens vers des sites musicaux
+    ├── player.html                # Lecteur audio Web léger (voir phiDu-fr/sc_music.git)
     ├── podcasts.html              # Interface de recherche & lecture de podcasts
     ├── radios.html                # Sélecteur de WebRadios
     ├── remote.html                # Télécommande virtuelle
     ├── tools.html                 # Outils de maintenance
-    └── upload.html                # Formulaire d'envoi rapide de fichiers MP3
+    └── upload.html                # Formulaire d'envoi rapide de fichiers MP3 et de liens de streaming
 
 ```
 

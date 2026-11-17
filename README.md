@@ -16,7 +16,7 @@ L'application agit comme un hub multimédia permettant le contrôle multi-room, 
 ### 🫶 Remplace l'application Bose SoundTouch et bien plus
 * **Associé au dépôt Soundcork** (https://github.com/deborahgu/soundcork.git)
 * **Solution légère, économique** rend à vos équipements Bose Soundtouch toutes les fonctionnalités d'avant le 6 mai 2026
-* Ajoute un grans nombre de fonctionnalités** à découvrir ci dessous
+* **Ajoute un grand nombre de fonctionnalités** à découvrir ci dessous
 
 ### 📻 Contrôle Bose SoundTouch & Temps Réel
 * **WebSocket Native Bose (`ws://<ip>:8080/`)** : Écoute passive et réactive en temps réel de l'état de chaque enceinte (statut, volume, piste, pochette, statut de batterie, masters/slaves de zones multi-room).

@@ -255,6 +255,35 @@
             color: var(--text-subdued, #B3B3B3);
             white-space: nowrap;
         }
+        .npl-actions {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        /* Bouton « Traduire en français » */
+        .npl-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 6px 14px;
+            font: inherit;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-base, #fff);
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.25);
+            border-radius: 999px;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: background-color .15s, border-color .15s, color .15s;
+        }
+        .npl-btn:hover:not(:disabled) { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.45); }
+        .npl-btn:focus-visible { outline: 2px solid var(--spotify-green, #1DB954); outline-offset: 2px; }
+        .npl-btn:disabled { opacity: .6; cursor: progress; }
+        .npl-btn.active { color: var(--spotify-green, #1DB954); border-color: var(--spotify-green, #1DB954); }
+        .npl-btn[hidden] { display: none !important; }
         .npl-text {
             white-space: pre-line;
             text-align: center;
@@ -272,6 +301,7 @@
         .npl-text::-webkit-scrollbar-thumb { background-color: rgba(255,255,255,0.2); border-radius: 3px; }
         @media (max-width: 768px) {
             #npLyricsBox { margin: 0 0 20px 0; padding: 15px; }
+            .npl-head { flex-wrap: wrap; }
             .npl-text { max-height: 280px; font-size: 14px; }
         }
     </style>
@@ -353,7 +383,12 @@
 			<div id="npLyricsBox" hidden role="region" aria-label="Paroles">
 				<div class="npl-head">
 					<div class="npl-title"><i class="fas fa-microphone-lines"></i> Paroles</div>
-					<div class="npl-status" id="nplStatus"></div>
+					<div class="npl-actions">
+						<div class="npl-status" id="nplStatus"></div>
+						<button type="button" class="npl-btn" id="nplTranslate" hidden aria-pressed="false" title="Traduire les paroles en français">
+							<i class="fas fa-language"></i> <span id="nplTranslateLabel">Traduire en français</span>
+						</button>
+					</div>
 				</div>
 				<div class="npl-text npl-muted" id="nplText">En attente du morceau…</div>
 			</div>
@@ -609,12 +644,23 @@
         const elText   = document.getElementById('nplText');
         const elStatus = document.getElementById('nplStatus');
         const card     = document.getElementById('nowPlayingCard');
+        const btn      = document.getElementById('nplTranslate');
+        const btnLabel = document.getElementById('nplTranslateLabel');
+        const btnIcon  = btn ? btn.querySelector('i') : null;
         if (!box || !elText || !elStatus || !card) return;
 
         const cache = new Map();   // "artiste|titre" -> { text, instrumental, from }
         let lastKey = '';
         let runId = 0;
         let controller = null;
+
+        // état de la traduction (bouton « Traduire en français »)
+        let current = null;        // paroles actuellement affichées : { text, from, instrumental }
+        let viewFr = false;        // true = la traduction est affichée
+        let trBusy = false;
+        let trRun = 0;
+        let trController = null;
+        const trCache = new Map(); // "artiste|titre" -> { text, via, alreadyFr }
 
         // ---------- utilitaires ----------
         const UNKNOWN = /^(|-|inconnu|artiste inconnu|unknown|unknown artist|prêt|pret)$/i;
@@ -650,6 +696,9 @@
         function abortCurrent() {
             runId++;
             if (controller) { controller.abort(); controller = null; }
+            cancelTranslation();
+            current = null;
+            updateBtn();
         }
 
         // ---------- sources de paroles (gratuites, sans clé) ----------
@@ -742,9 +791,138 @@
         }
 
         function show(res) {
+            cancelTranslation();
+            current = res;
+            viewFr = false;
             if (res.instrumental) render('♪ Morceau instrumental', 'via ' + res.from, true);
             else render(res.text, 'via ' + res.from, false);
+            updateBtn();
         }
+
+        // ---------- traduction en français (gratuite, sans clé) ----------
+        function cancelTranslation() {
+            trRun++;
+            if (trController) { trController.abort(); trController = null; }
+            trBusy = false;
+        }
+
+        function updateBtn() {
+            if (!btn) return;
+            const ok = !!(current && current.text);
+            btn.hidden = !ok;
+            if (!ok) return;
+            btn.disabled = trBusy;
+            btn.classList.toggle('active', viewFr);
+            btn.setAttribute('aria-pressed', viewFr ? 'true' : 'false');
+            if (btnIcon) btnIcon.className = trBusy ? 'fas fa-spinner fa-spin' : 'fas fa-language';
+            if (btnLabel) btnLabel.textContent = trBusy ? 'Traduction…' : (viewFr ? 'Voir l’original' : 'Traduire en français');
+        }
+
+        // Découpe le texte par groupes de lignes entières (max ≈ `max` caractères)
+        function splitChunks(text, max) {
+            const chunks = [];
+            let buf = [], len = 0;
+            for (const line of text.split('\n')) {
+                if (buf.length && len + line.length + 1 > max) { chunks.push(buf.join('\n')); buf = []; len = 0; }
+                buf.push(line);
+                len += line.length + 1;
+            }
+            if (buf.length) chunks.push(buf.join('\n'));
+            return chunks;
+        }
+
+        // Service principal : point d'accès public de Google Traduction (détecte la langue source)
+        async function googleChunk(text, signal) {
+            const url = 'https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=fr&dt=t&q='
+                + encodeURIComponent(text);
+            const r = await fetch(url, { signal });
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            const data = await r.json();
+            if (!Array.isArray(data) || !Array.isArray(data[0])) throw new Error('Réponse inattendue');
+            return { text: data[0].map(s => (s && s[0]) || '').join(''), lang: data[2] || '' };
+        }
+
+        // Secours : MyMemory (limité à ~500 caractères par requête)
+        async function myMemoryChunk(text, signal) {
+            const url = 'https://api.mymemory.translated.net/get?langpair=' + encodeURIComponent('Autodetect|fr')
+                + '&q=' + encodeURIComponent(text);
+            const r = await fetch(url, { signal });
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            const data = await r.json();
+            const t = data && data.responseData && data.responseData.translatedText;
+            if (!t || Number(data.responseStatus) !== 200 || /MYMEMORY WARNING/i.test(t)) throw new Error('MyMemory');
+            return { text: t, lang: '' };
+        }
+
+        async function translateToFrench(text, signal) {
+            async function run(fn, max, via) {
+                const parts = [], langs = [];
+                for (const chunk of splitChunks(text, max)) {
+                    if (!chunk.trim()) { parts.push(chunk); continue; }   // ligne(s) vide(s) conservée(s)
+                    const r = await fn(chunk, signal);
+                    parts.push(r.text);
+                    langs.push(r.lang);
+                }
+                return {
+                    text: parts.join('\n').replace(/\n{3,}/g, '\n\n').trim(),
+                    via,
+                    alreadyFr: langs.length > 0 && langs.every(l => l === 'fr')
+                };
+            }
+            try { return await run(googleChunk, 1200, 'Google'); }
+            catch (e) { if (e.name === 'AbortError') throw e; }
+            return await run(myMemoryChunk, 450, 'MyMemory');
+        }
+
+        function applyTranslation(tr) {
+            if (tr.alreadyFr) {
+                viewFr = false;
+                elStatus.textContent = 'Les paroles sont déjà en français';
+            } else {
+                viewFr = true;
+                render(tr.text, 'traduit via ' + tr.via, false);
+            }
+            updateBtn();
+        }
+
+        async function onTranslateClick() {
+            if (!current || !current.text || trBusy) return;
+
+            if (viewFr) {                       // retour à l'original
+                viewFr = false;
+                render(current.text, 'via ' + current.from, false);
+                updateBtn();
+                return;
+            }
+
+            const key = lastKey;
+            const cached = trCache.get(key);
+            if (cached) { applyTranslation(cached); return; }
+
+            cancelTranslation();
+            const myRun = trRun;
+            trController = new AbortController();
+            trBusy = true;
+            elStatus.textContent = 'Traduction en cours…';
+            updateBtn();
+
+            try {
+                const tr = await translateToFrench(current.text, trController.signal);
+                if (myRun !== trRun) return;    // changement de morceau pendant la traduction
+                trCache.set(key, tr);
+                trBusy = false;
+                trController = null;
+                applyTranslation(tr);
+            } catch (e) {
+                if (myRun !== trRun) return;
+                trBusy = false;
+                trController = null;
+                elStatus.textContent = 'Traduction indisponible';
+                updateBtn();
+            }
+        }
+
+        if (btn) btn.addEventListener('click', onTranslateClick);
 
         // ---------- synchronisation avec l'état du lecteur ----------
         function sync() {
@@ -787,3 +965,4 @@
     </script>
 </body>
 </html>
+

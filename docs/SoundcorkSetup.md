@@ -1,216 +1,292 @@
-   Installation Soundcork body { font-family: Arial, sans-serif; max-width: 900px; margin: 20px auto; padding: 0 20px; line-height: 1.6; color: #333; } h1, h2, h3, h4 { color: #0056b3; } ul { margin-bottom: 15px; } /\* --- Nouveaux styles pour simplifier les blocs de code --- \*/ .code-container { position: relative; margin-bottom: 25px; } pre.code-block { background-color: #f4f4f9; border: 1px solid #ddd; border-radius: 8px; padding: 45px 15px 15px 15px; /\* Espace en haut pour le bouton \*/ font-family: 'Courier New', Courier, monospace; color: #333; overflow-x: auto; white-space: pre-wrap; /\* Permet le retour à la ligne auto \*/ margin: 0; } .controls { position: absolute; top: 8px; right: 8px; display: flex; align-items: center; } button.copy-btn { padding: 6px 12px; background-color: #007BFF; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.85em; transition: background-color 0.2s; } button.copy-btn:hover { background-color: #0056b3; } .msg-success { color: green; margin-right: 10px; font-size: 0.85em; font-weight: bold; opacity: 0; transition: opacity 0.3s; } .msg-success.show { opacity: 1; } .commande-inline { background-color: #eee; padding: 2px 6px; font-family: 'Courier New', Courier, monospace; border-radius: 4px; color: #d14; }
+  Installation Soundcork body { font-family: Arial, sans-serif; max-width: 900px; margin: 20px auto; padding: 0 20px; line-height: 1.6; color: #333; } h1, h2, h3, h4 { color: #0056b3; } ul { margin-bottom: 15px; } /\* --- Nouveaux styles pour simplifier les blocs de code --- \*/ .code-container { position: relative; margin-bottom: 25px; } pre.code-block { background-color: #f4f4f9; border: 1px solid #ddd; border-radius: 8px; padding: 45px 15px 15px 15px; /\* Espace en haut pour le bouton \*/ font-family: 'Courier New', Courier, monospace; color: #333; overflow-x: auto; white-space: pre-wrap; /\* Permet le retour à la ligne auto \*/ margin: 0; } .controls { position: absolute; top: 8px; right: 8px; display: flex; align-items: center; } button.copy-btn { padding: 6px 12px; background-color: #007BFF; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.85em; transition: background-color 0.2s; } button.copy-btn:hover { background-color: #0056b3; } .msg-success { color: green; margin-right: 10px; font-size: 0.85em; font-weight: bold; opacity: 0; transition: opacity 0.3s; } .msg-success.show { opacity: 1; } .commande-inline { background-color: #eee; padding: 2px 6px; font-family: 'Courier New', Courier, monospace; border-radius: 4px; color: #d14; }
 
-# Installer Soundcork et soundcork-stockholm-app et quelques outils sur un Raspberry (3B+ ou Zero 2 W mini)
+Installer Soundcork et les projets sc\_xx sur un Raspberry (3B+ ou Zero 2 W mini)
+=================================================================================
 
 _Pour pallier le shutdown Soundtouch du 6 mai 2026._
 
-**Note :** Le Raspberry Zero 2 W mini fonctionne très bien **sans soundcork-stockholm-app**.
+**Note :** Le Raspberry Zero 2 W mini fonctionne très bien.
 
----
+* * *
 
-## Installation de base
+Installation de base
+--------------------
 
 #### Matériel :
 
--   Raspberry Zero 2 W minimum, Raspberry Pi 3B+ conseillé
--   Carte micro SD 16 Go minimum classe 10 ou SSD interface USB
--   Carte RJ45 dans le cas de branchement filaire
--   Câble micro USB pour alimentation électrique, à brancher sur port USB de la box/routeur ou sur alimentation officielle Raspberry
+*   Raspberry Zero 2 W minimum, Raspberry Pi 3B+ conseillé
+*   Carte micro SD 16 Go minimum classe 10 ou SSD auto-alimenté interface USB
+*   Carte RJ45 dans le cas de branchement filaire
+*   Câble micro USB pour alimentation électrique, à brancher sur port USB de la box/routeur ou sur alimentation officielle Raspberry
 
 #### Logiciel :
 
--   Télécharger et installer sur PC [Raspberry Pi Imager](https://downloads.raspberrypi.com/imager/imager_latest.exe)
-    -   Appareil : Raspberry Pi 3
-    -   OS : Raspberry Pi OS (other)
-        -   Raspberry Pi OS Lite (64 bits)
-    -   Stockage : Carte SD 
-    -   Nom d'hôte : vide
-    -   Utilisateur : pi ; mot de passe : pi
+*   Télécharger et installer sur PC [Raspberry Pi Imager](https://downloads.raspberrypi.com/imager/imager_latest.exe)
+    *   Appareil : Raspberry Pi 3
+    *   OS : Raspberry Pi OS (other)
+        *   Raspberry Pi OS Lite (64 bits)
+    *   Stockage : Carte SD 
+    *   Nom d'hôte : vide
+    *   Utilisateur : pi ; mot de passe : pi
 
 Puis :
 
--   Installer sur PC Putty ou Kitty (mieux) [Lien KiTTY](https://www.fosshub.com/KiTTY.html?dwl=kitty_portable-0.76.1.13.exe)
--   Mettre à jour l'OS :
+*   Installer sur PC Putty ou Kitty (mieux) [Lien KiTTY](https://www.fosshub.com/KiTTY.html?dwl=kitty_portable-0.76.1.13.exe)
+*   Se connecter sur le Raspberry :  
+    ![](screenshot-KiTTY.jpg)
+*   Utilisateur : pi ; mot de passe : pi
+*   Si la connexion ne fonctionne pas :
+    *   Trouver l'adresse IP fournie par la Box ou le routeur du Raspberry en se connectant sur la Box ou routeur
+
+*   Mettre à jour l'OS :
 
 sudo apt update && sudo apt upgrade -y
 
-### Installer des applis
+### Installations des prérequis
 
--   Installer sc\_tools :
+*   Paquets à installer :
 
-cd $HOME  
-curl -o sc\_tools.latest.7z http://phd.dsmynas.net/sc\_tools/sc\_tools.latest.7z  
-7z x sc\_tools.latest.7z -o$HOME/sc\_tools/  
-rm sc\_tools.latest.7z  
-find ./sc\_tools/ -type f -exec chmod 664 {} +  
-find ./sc\_tools/ -type f -name "\*.sh" -exec chmod 775 {} +  
-find ./sc\_tools/ -type d -exec chmod 775 {} +
+sudo apt-get install \\
+avahi-daemon avahi-utils base-files base-passwd bash bash-completion binfmt-support bluez bluez-alsa-utils bluez-firmware \\
+bsdutils build-essential ca-certificates cifs-utils cloud-init console-setup coreutils cpio cron cron-daemon-common curl dash \\
+dhcpcd-base diffutils dmidecode \\
+dos2unix dosfstools e2fsprogs ed ethtool eyed3 fbset fdisk fdupes ffmpeg file findutils firmware-atheros \\
+firmware-brcm80211 firmware-libertas firmware-mediatek firmware-realtek flac flatpak gcc-14-base gdb git gnupg gpiod grep gzip hostname htop init \\
+init-system-helpers initramfs-tools iproute2 iputils-ping jdupes jq keyboard-configuration kmod kms++-utils less \\
+login.defs logrotate logsave lsof lua5.1 luajit man-db manpages-dev mawk mkvtoolnix \\
+mount nano ncdu ncurses-base ncurses-bin net-tools netbase network-manager nfs-common nfs-kernel-server nftables nmap nodejs ntfs-3g openssl \\
+openssl-provider-legacy \\
+p7zip-full passwd pciutils perl-base php-curl php-fpm pi-bluetooth pipewire pipewire-audio pipewire-pulse pkg-config procps psmisc python-is-python3  \\
+python3 \\
+python3-full python3-gpiozero python3-libgpiod python3-pip python3-rpi-lgpio python3-smbus2 python3-spidev python3-venv qemu-user-static \\
+rsync samba samba-common sed \\
+sensible-utils smbclient sqv ssh ssh-import-id strace sudo systemd systemd-sysv systemd-timesyncd sysvinit-utils tar tcpdump testdisk \\
+tmux tree tzdata udev udisks2 unzip usb-modeswitch usbutils userconf-pi util-linux v4l-utils vim-common vim-tiny vlc wget whiptail wireless-tools wl-clipboard \\
+wpasupplicant xmlstarlet zip zlib1g zlib1g-dev -y
+sudo apt-get autoremove --purge -y
 
--   Pour le Rapberry Pi zero 2W :
+*   Installation de docker :
+
+curl -fsSL https://get.docker.com -o get-docker.sh
+sudo sh get-docker.sh
+sudo usermod -aG docker $USER
+newgrp docker
+sudo tee /etc/docker/daemon.json > /dev/null << 'EOF'
+{
+  "dns": \["8.8.8.8", "1.1.1.1"\]
+}
+EOF
+sudo systemctl restart docker
+
+*   Alias :
+
+tee $HOME/.bash\_aliases > /dev/null << 'EOF'
+alias ll='ls -lah'
+alias ...='cd ../..'
+alias ..='cd ..'
+
+alias py='source /home/pi/.venv/bin/activate && python3'
+alias sauve='/home/pi/sc\_tools/tools/sauve.sh'
+alias up='sudo apt update && sudo apt upgrade -y && sudo apt autoremove -y'
+
+alias dc='docker compose'
+alias dps='docker ps -a'
+alias dstat='docker stats --format "table {{.Name}}\\t{{.CPUPerc}}\\t{{.MemUsage}}"'
+alias docker-compose='docker compose'
+
+function d\_up() {
+    docker compose down "$1"
+    sauve
+    docker compose up -d "$1"
+    docker compose logs -f "$1"
+}
+
+function d\_rst() {
+    docker compose stop "$1"
+    sauve
+    docker compose start "$1"
+    docker compose logs -f "$1"
+}
+
+function dx {
+    docker exec -it "$1" /bin/bash || docker exec -it "$1" /bin/sh
+}
+
+function sshST() {
+    ssh -o HostKeyAlgorithms=ssh-rsa -o PubkeyAcceptedAlgorithms=ssh-rsa \\
+        -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \\
+        -o BatchMode=yes -o ConnectTimeout=3 -o LogLevel=ERROR \\
+        "root@192.168.1.$1"
+}
+
+function rebuild\_dlna\_cache() {
+    docker compose -f /home/pi/sc\_tools/docker-compose.yml stop local\_dlna
+    sudo rm -rf /home/pi/sc\_tools/dlna\_cache/cache/
+    docker compose -f /home/pi/sc\_tools/docker-compose.yml start local\_dlna
+}
+
+function sub\_rebuild\_cache() {
+    docker compose -f /home/pi/sc\_music/docker-compose.yml stop subsonic\_backend
+    sudo rm -rf /home/pi/sc\_music/data/
+    docker compose -f /home/pi/sc\_music/docker-compose.yml start subsonic\_backend
+}
+EOF
+
+source $HOME/.bashrc
+
+*   Samba :
+
+sudo cp /etc/samba/smb.conf /etc/samba/smb.conf.bak 2>/dev/null || true
+sudo tee /etc/samba/smb.conf > /dev/null << 'EOF'
+\[global\]
+    deadtime = 15
+    disable netbios = Yes
+    disable spoolss = Yes
+    dns proxy = No
+    load printers = No
+    logging = file
+    map to guest = Never
+    max log size = 1000
+    printcap name = /dev/null
+    security = USER
+    server min protocol = SMB2
+    server role = standalone server
+    smb ports = 445
+    socket options = TCP\_NODELAY IPTOS\_LOWDELAY
+    idmap config \* : backend = tdb
+    posix locking = No
+    printing = bsd
+    strict locking = No
+    use sendfile = Yes
+    veto files = /.git/node\_modules/.cache/
+
+\[pi\]
+    comment = Repertoire personnel pi
+    path = /home/pi
+    valid users = pi
+    read only = No
+    create mask = 0777
+    directory mask = 0777
+    force user = pi
+    level2 oplocks = No
+    oplocks = No
+
+EOF
+
+(echo "pi"; echo "pi") | sudo smbpasswd -s -a pi
+sudo systemctl restart smbd
+
+Maintenant vous pouvez accéder au Raspberry à partir du partage windows \\\\raspberrypi\\pi
+
+### Installations des applications
+
+*   Pour le Raspberry Pi zero 2W :
 
 sudo  ~/sc\_tools/tools/swapRpiZero2.sh
 
--   Installation de docker :
+*   Pour accéder aux enceintes rootées :
 
-curl -fsSL https://get.docker.com -o get-docker.sh  
-sudo sh get-docker.sh  
-sudo usermod -aG docker $USER  
-newgrp docker  
-sudo tee /etc/docker/daemon.json > /dev/null << 'EOF'  
-{  
-  "dns": \["8.8.8.8", "1.1.1.1"\]  
-}  
-EOF  
-sudo systemctl restart docker
-
--   Paquets à installer :
-
-sudo apt-get install $(cat ~/sc\_tools/docs/paquets\_a\_installer.txt) -y  
-sudo apt-get autoremove --purge -y  
-  
-\# Arret du serveur web (pas utile)  
-sudo systemctl stop nginx  
-sudo systemctl disable nginx  
-  
-\# Arret du serveur multimedia (si pas de SSD USB connecté)  
-sudo systemctl stop minidlna.service  
-sudo systemctl disable minidlna.service
-
--   Alias :
-
-if ! grep -q "alias ll='ls -la'" ~/.bashrc; then  
-    echo "alias ll='ls -la'" >> ~/.bashrc  
-fi  
-source ./.bashrc
-
-### Samba
-
-sudo cp /etc/samba/smb.conf /etc/samba/smb.conf.bak 2>/dev/null || true  
-sudo tee /etc/samba/smb.conf > /dev/null << 'EOF'  
-\[global\]  
-deadtime = 15  
-disable netbios = Yes  
-disable spoolss = Yes  
-dns proxy = No  
-load printers = No  
-logging = file  
-map to guest = Bad User  
-max log size = 1000  
-printcap name = /dev/null  
-security = USER  
-server min protocol = SMB2  
-server role = standalone server  
-smb ports = 445  
-socket options = TCP\_NODELAY IPTOS\_LOWDELAY  
-idmap config \* : backend = tdb  
-posix locking = No  
-printing = bsd  
-strict locking = No  
-use sendfile = Yes  
-veto files = /.git/node\_modules/.cache/  
-  
-\[pi\]  
-create mask = 0777  
-directory mask = 0777  
-force user = pi  
-guest ok = Yes  
-level2 oplocks = No  
-oplocks = No  
-path = /home/pi  
-read only = No  
+tee ~/.ssh/config  > /dev/null << 'EOF'
+host 192.168.1.\*
+    HostKeyAlgorithms +ssh-rsa
+    PubkeyAcceptedKeyTypes +ssh-rsa
 EOF
 
--   Utilisateur et démarrage samba :
+*   Configurations par défaut, à ce niveau :
 
-(echo "pi"; echo "pi") | sudo smbpasswd -s -a pi  
-sudo systemctl restart smbd
+*   **Toutes les enceintes doivent être branchées et raccordées au réseau local** (wifi ou filaire)
+*   **Démonter les disques externes des sous-dossiers**
+*   Ce script :
 
-### Installer soundcork et soundcork-stockholm-app
+*   Configure les applis Soundcork et sc\_tools
+*   Si tout se passe bien, crée et démarre les containers docker
 
--   Clonage des git :
+*   Bien suivre le compte rendu sure la console
 
-cd $HOME && git clone https://github.com/deborahgu/soundcork.git  
-git clone https://github.com/krahl/soundcork-stockholm-app.git
+curl -L -o init\_config.sh https://raw.githubusercontent.com/PhiDu-fr/sc\_tools/HEAD/tools/init\_config.sh
+init\_config.sh
 
--   Configurations par défaut :
+#### **Si tout s'est bien déroulé, doit indiquer :** Vous pouvez maintenant utiliser sc\_tools depuis un navigateur connecté au réseau local (wifi ou filaire) à l'adresse
 
-cd ~/sc\_tools/docs && find . -type f -name "\*.etalon" -exec cp --parents {} ~/ \\; && cd
+### http://XXX.XXX.XXX.XXX
 
--   Recherche journalière de mise à jour (ajouter la ligne dans crontab) :
+*   Recherche journalière de mise à jour (ajouter la ligne dans crontab) :
 
 ( crontab -l ; echo "0 3 \* \* \* /home/pi/sc\_tools/update/updater.sh" ) | crontab -
 
--   Changer le nom du Raspberry en soundcork :
+*   Changer le nom du Raspberry en soundcork :
 
 sudo raspi-config nonint do\_hostname soundcork
 
----
+* * *
 
--   Arrêter wifi et BlueTooth :
+*   Arrêter wifi et BlueTooth :
 
 echo "dtoverlay=disable-bt" | sudo tee -a /boot/firmware/config.txt  
 echo "dtoverlay=disable-wifi" | sudo tee -a /boot/firmware/config.txt  
 echo "Effectif au prochain démarrage"
 
--   Modifier les configurations avec les adresses ip locales :
+*   Modifier les configurations avec les adresses ip locales :
 
 ~/sc\_tools/tools/change\_cfg.sh  
 ~/sc\_tools/tools/change\_ip.sh
 
----
+* * *
 
-## Enceintes
+Enceintes
+---------
 
--   Il faut rooter au moins une enceinte :
+*   Il faut rooter au moins une enceinte :
 
--   Méthode logicielle [voir plus bas](#root)
--   Méthode matérielle :
+*   Méthode logicielle [voir plus bas](#root)
+*   Méthode matérielle :
     
     _Si possible, l'enceinte la plus utilisée.  
     Certaines machines ne sont pas rootables ainsi ex: Wireless Link adapter (WLA), ..._
     
 
--   C'est un état provisoire afin de récupérer le fichier Sources.xml
--   Brancher une clé USB à formater.  
+*   C'est un état provisoire afin de récupérer le fichier Sources.xml
+*   Brancher une clé USB à formater.  
     Cette clé ne doit contenir qu'un seul fichier vide 'remote\_services'.  
     Connecter la clé dans le port USB de l'enceinte au préalable.
 
 ~/sc\_tools/tools/create\_remote\_services.sh
 
--   Débranchez l'enceinte du secteur, attendez 2 mn, rebranchez, attendez 3 à 4mn.
+*   Débranchez l'enceinte du secteur, attendez 2 mn, rebranchez, attendez 3 à 4mn.
 
 **Elles doivent toutes être allumée et connectées au réseau (filaire ou wifi).**
 
--   Configuration des enceintes :
-    -   Remplacer les serveurs Bose par soundcork local sur les enceintes
-    -   Création de la base de données soundcork
-    -   Vérification de la base de données soundcork  
+*   Configuration des enceintes :
+    *   Remplacer les serveurs Bose par soundcork local sur les enceintes
+    *   Création de la base de données soundcork
+    *   Vérification de la base de données soundcork  
         **Bien lire le compte rendu final**
 
 ~/sc\_tools/tools/change\_marge.sh  
 ~/sc\_tools/tools/create\_data.sh  
 ~/sc\_tools/tools/control\_data.sh
 
--   S'il y a plusieurs comptes, en choisir 1 (sous la forme 7654321 - soundcork y tient) :
-    -   Remplacer sur les enceintes pour qu'elles aient le même compte
-    -   Remplacer le compte propre à chaque site sur toutes les enceintes étrangères au compte choisi :
+*   S'il y a plusieurs comptes, en choisir 1 (sous la forme 7654321 - soundcork y tient) :
+    *   Remplacer sur les enceintes pour qu'elles aient le même compte
+    *   Remplacer le compte propre à chaque site sur toutes les enceintes étrangères au compte choisi :
 
 ~/sc\_tools/tools/change\_accountId.sh
 
--   Relancer création et vérification :  
+*   Relancer création et vérification :  
     jusqu'au message : **Toutes les enceintes utilisent le même margeAccountUUID**  
     ~/sc\_tools/tools/create\_data.sh  
     ~/sc\_tools/tools/control\_data.sh
 
 ### Quand tout est correct, un dossier /home/pi/soundcork/dataX est créé
 
--   Renommer :
+*   Renommer :
 
 mv ~/soundcork/dataX ~/soundcork/data
 
----
+* * *
 
-## Lancement des applis
+Lancement des applis
+--------------------
 
 #### Mise en route sans soundcork-stockholm-app
 
@@ -246,50 +322,53 @@ cd ~/sc\_tools
 docker compose start  
 ~/sc\_tools/tools/docker\_menage.sh
 
----
+* * *
 
-## Utilisation
+Utilisation
+-----------
 
 Maintenant tout est prêt le Raspberry doit tourner en permanence.
 
--   Sur un navigateur :
-    -   Etat des enceintes : [http://soundcork:8000/admin](http://soundcork:8000/admin)
-    -   MiniApp pour faire des manips simples : [http://soundcork:8000](http://soundcork:8000/)
-    -   L'appli Bose SoundTouch complète : [http://soundcork:8088](http://soundcork:8088/)
-    -   Télécommande globale : [http://soundcork](http://soundcork/)
+*   Sur un navigateur :
+    *   Etat des enceintes : [http://soundcork:8000/admin](http://soundcork:8000/admin)
+    *   MiniApp pour faire des manips simples : [http://soundcork:8000](http://soundcork:8000/)
+    *   L'appli Bose SoundTouch complète : [http://soundcork:8088](http://soundcork:8088/)
+    *   Télécommande globale : [http://soundcork](http://soundcork/)
 
 **Conseil :** Utilisez [http://soundcork](http://soundcork/) il y a les liens vers les autres applis dans le menu "Administration".
 
----
+* * *
 
-## Conseils & Dépannage
+Conseils & Dépannage
+--------------------
 
--   **Sur la box ou routeur :**
-    -   Dans DHCP, fixer en permanent l'adresse IP du Raspberry.
-    -   Dans DNS, fixer le nom soundcork.
+*   **Sur la box ou routeur :**
+    *   Dans DHCP, fixer en permanent l'adresse IP du Raspberry.
+    *   Dans DNS, fixer le nom soundcork.
 
 ### En cas de déménagement ou changement de box routeur
 
--   Si le préfixe IP n'a pas bougé : Juste refaire la manip en mettant bien l'IP que possédait le Raspberry.
--   Si le préfixe IP a bougé :
-    -   Remplacer les serveurs Bose : ~/sc\_tools/tools/change\_marge.sh
-    -   Recréer DB : ~/sc\_tools/tools/create\_data.sh
-    -   Vérifier DB : ~/sc\_tools/tools/control\_data.sh
-    -   Adapter IP : ~/sc\_tools/change\_cfg.sh et ~/sc\_tools/change\_ip.sh
+*   Si le préfixe IP n'a pas bougé : Juste refaire la manip en mettant bien l'IP que possédait le Raspberry.
+*   Si le préfixe IP a bougé :
+    *   Remplacer les serveurs Bose : ~/sc\_tools/tools/change\_marge.sh
+    *   Recréer DB : ~/sc\_tools/tools/create\_data.sh
+    *   Vérifier DB : ~/sc\_tools/tools/control\_data.sh
+    *   Adapter IP : ~/sc\_tools/change\_cfg.sh et ~/sc\_tools/change\_ip.sh
 
 ### Ajout d'une nouvelle enceinte
 
--   La rentrer dans l'ensemble
-    -   Réinitialisation usine : voir documention ou Vol- et 1 (quand elle munie d'un panel)
-    -   Connexion au réseau : voir documention (wifi ou filaire)
-    -   Trouver l'IP de l'enceinte : ~/sc\_tools/tools/discoverST.sh
-    -   Change le compte du site : ~/sc\_tools/tools/change\_accountId.sh
-    -   Remplacer les serveurs Bose : ~/sc\_tools/tools/change\_marge.sh
-    -   Intégrer à soundcork : [http:/soundcork:8000/admin](http://soundcork:8000/admin) sur navigateur, suivre les indications
+*   La rentrer dans l'ensemble
+    *   Réinitialisation usine : voir documention ou Vol- et 1 (quand elle munie d'un panel)
+    *   Connexion au réseau : voir documention (wifi ou filaire)
+    *   Trouver l'IP de l'enceinte : ~/sc\_tools/tools/discoverST.sh
+    *   Change le compte du site : ~/sc\_tools/tools/change\_accountId.sh
+    *   Remplacer les serveurs Bose : ~/sc\_tools/tools/change\_marge.sh
+    *   Intégrer à soundcork : [http:/soundcork:8000/admin](http://soundcork:8000/admin) sur navigateur, suivre les indications
 
----
+* * *
 
-# Sources et autres infos
+Sources et autres infos
+=======================
 
 ### changer le serveur cloud
 
@@ -306,31 +385,32 @@ getpdo CurrentSystemConfiguration
 
 _Il faut taper la première commande 2 fois pour que l'enceinte écoute ;)_
 
--   Changer le AccountID (margeAccountUUID) :
+*   Changer le AccountID (margeAccountUUID) :
 
 nc <192.168.1.Ip\_Enceinte> 17000  
 envswitch AccountId get  
 envswitch AccountId set 5476586  
 sys reboot
 
--   Rebooter à distance une enceinte rootée ou non :
+*   Rebooter à distance une enceinte rootée ou non :
 
 echo "sys reboot" | nc 192.168.1.25 17000
 
 ### Rooter une enceinte, méthode logicielle :
 
--   1- Choisir une enceinte :
+*   1- Choisir une enceinte :
 
 ~/sc-tools/tools/discoverST -b
 
--   2- rooter l'enceinte choisie (ne fonctionne pas sur les portables génération 1) :
+*   2- rooter l'enceinte choisie (ne fonctionne pas sur les portables génération 1) :
 
 ~/sc-tools/tools/rootST.sh ??  #suffixe de l'adresse IP (ex: 65)  
 ~/sc-tools/tools/rebootST.sh ??  # (ex: 65)
 
--   3- [Reprendre](#Cdata) la procédure :
+*   3- [Reprendre](#Cdata) la procédure :
 
-## Installation de tailscale (vpn) :
+Installation de tailscale (vpn) :
+---------------------------------
 
 Tailscale va créer un tunnel sécurisé direct entre votre smartphone et votre Raspberry Pi, sans que vous n'ayez à ouvrir le moindre port sur votre box.  
 Voici comment mettre cela en place en quelques minutes.  

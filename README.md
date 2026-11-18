@@ -16,6 +16,7 @@ L'application agit comme un hub multimédia permettant le contrôle multi-room, 
 ### 🫶 Remplace l'application Bose SoundTouch et bien plus
 * **Associé au dépôt Soundcork** (https://github.com/deborahgu/soundcork.git)
 * **Solution légère, économique** rend à vos équipements Bose Soundtouch toutes les fonctionnalités d'avant le 6 mai 2026
+* **Client léger** Compatible tous systèmes Appl€, Micro$oft, Linux, vieux navigateurs, vieille tablette
 * **Ajoute un grand nombre de fonctionnalités** à découvrir ci dessous
 
 ### 📻 Contrôle Bose SoundTouch & Temps Réel
@@ -223,7 +224,7 @@ Si vous souhaitez utiliser cette fonctionnalité (gratuite, financée par les do
 
 1. **Multiroom (mode ordinateur)** : Dans la sidebar, sélectionner l'enceinte maître puis `Ctrl + clic` sur les autres enceintes participantes, et enfin cliquer sur `Grouper`.
 2. **Multiroom (mode smartphone)** : Dans la sidebar, sélectionner l'enceinte maître puis faire un appui long sur la 2e enceinte participante, un appui simple sur les suivantes, et enfin appuyer sur `Grouper`.
-3. **Enregistrement de présélection** : Sur les écrans `Lecture en cours`, `Webradios`, `Diffusion réseau`, `Musique enregistrée`, `Diffuser depuis l'appareil`, `Télécommande` et `Configuration`, pour mettre en présélection le flux en cours, appuyer sur le bouton en bas à droite de la télécommande (cercles) puis sur le numéro choisi.
+3. **Enregistrement de présélection** : Sur les écrans `Lecture en cours`, `Webradios`, `Diffusion réseau`, `Musique enregistrée`, `Diffuser depuis l'appareil`, `Télécommande` et `Configuration`, pour mettre en présélection le flux en cours, appuyer sur le bouton en bas à gauche de la télécommande (cercles) puis sur le numéro choisi.
 
 ---
 

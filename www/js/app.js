@@ -546,9 +546,9 @@ setInterval(() => {
     const spk = globalData.speakers[ips[0]];
     if (!spk) return;
 
-    const progressFill = document.getElementById('progress-bar-fill'); 
-    const timeCurrent = document.getElementById('time-current');       
-    const timeTotal = document.getElementById('time-total');           
+	const progressFill = document.getElementById('np-progress-fill');
+	const timeCurrent = document.getElementById('np-time-current');
+	const timeTotal = document.getElementById('np-time-total');
 
     if (spk.time_total && parseInt(spk.time_total) > 0) {
         let pos = spk.local_time_base || 0;

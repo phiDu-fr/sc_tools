@@ -294,15 +294,6 @@ sudo systemctl restart smbd</pre>
     
     <h3>Installations des applications</h3>
     <ul>
-        <li>Clonnage des dépôts :</li>
-    </ul>
-
-<pre class="code-block">
-git clone https://github.com/phiDu-fr/sc_tools.git
-git clone https://github.com/deborahgu/soundcork.git
-</pre>
-
-    <ul>
         <li>Pour le Raspberry Pi zero 2W :</li>
     </ul>
 
@@ -336,8 +327,8 @@ EOF
     </ul>
 
 <pre class="code-block">
-cp $HOME/sc_tools/tools/init_config.sh $HOME/init_config.sh
-$HOME/init_config.sh
+curl -L -o init_config.sh https://raw.githubusercontent.com/PhiDu-fr/sc_tools/HEAD/tools/init_config.sh
+init_config.sh
 </pre>
 <h4><b>Si tout s'est bien déroulé, doit indiquer :</b> Vous pouvez maintenant utiliser sc_tools depuis un navigateur connecté au réseau local (wifi ou filaire) à l'adresse</h4>
 <h3>http://XXX.XXX.XXX.XXX</h3>

@@ -10,7 +10,7 @@ rm -rf sc_music
 rm -rf sc_virtual
 
 git clone https://github.com/deborahgu/soundcork.git
-#git clone https://github.com/phiDu-fr/sc_tools.git
+git clone https://github.com/phiDu-fr/sc_tools.git
 #git clone https://github.com/phiDu-fr/sc_music.git
 #git clone https://github.com/phiDu-fr/sc_virtual.git
 

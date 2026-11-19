@@ -298,7 +298,8 @@ sudo systemctl restart smbd</pre>
     </ul>
 
 <pre class="code-block">
-sudo  ~/sc_tools/tools/swapRpiZero2.sh
+curl -L -o swapRpiZero2.sh https://raw.githubusercontent.com/PhiDu-fr/sc_tools/HEAD/tools/swapRpiZero2.sh
+sudo sh swapRpiZero2.sh
 </pre>
     
     <ul>
@@ -328,7 +329,7 @@ EOF
 
 <pre class="code-block">
 curl -L -o init_config.sh https://raw.githubusercontent.com/PhiDu-fr/sc_tools/HEAD/tools/init_config.sh
-init_config.sh
+sh init_config.sh
 </pre>
 <h4><b>Si tout s'est bien déroulé, doit indiquer :</b> Vous pouvez maintenant utiliser sc_tools depuis un navigateur connecté au réseau local (wifi ou filaire) à l'adresse</h4>
 <h3>http://XXX.XXX.XXX.XXX</h3>

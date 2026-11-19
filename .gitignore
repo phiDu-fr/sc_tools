@@ -42,7 +42,8 @@ Podcasts/
 update/
 radiofrance_downloader/radiofrance-config/
 app/virtual_soundtouch.py
-data/*.json
+data/alarms.json
+data/custom_logos.json
 docs/soundcork/
 docs/soundcork-stockholm-app/
 docs/*.txt
@@ -56,4 +57,4 @@ projetWS.MD
 www/player.html
 www/js/player.js
 www/images/
-www/img/
+www/img/*.svg

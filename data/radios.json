@@ -1,0 +1,87 @@
+[
+    {
+        "logo": "/www/img/radios/France_inter.jpg",
+        "name": "France inter",
+        "uuid": "465ec3e6-53b6-4eac-bd97-4681d1c0bb28"
+    },
+    {
+        "logo": "/www/img/radios/FIP.jpg",
+        "name": "FIP",
+        "uuid": "c2cbf444-f09b-4407-a6d0-53c64ac05424"
+    },
+    {
+        "logo": "/www/img/radios/France_Info.jpg",
+        "name": "France Info",
+        "uuid": "a986d972-730c-48c1-89d8-fb0da1541579"
+    },
+    {
+        "logo": "/www/img/radios/France_Culture.jpg",
+        "name": "France Culture",
+        "uuid": "6a1440b2-e6f0-11e9-a96c-52543be04c81"
+    },
+    {
+        "logo": "/www/img/radios/France_Musique.jpg",
+        "name": "France Musique",
+        "uuid": "81440088-0a76-11e8-ae97-52543be04c81"
+    },
+    {
+        "logo": "/www/img/radios/Radio_Paradise_Rock_Mix.jpg",
+        "name": "Radio Paradise Rock Mix",
+        "uuid": "5681d06a-f5af-11e9-bbf2-52543be04c81"
+    },
+    {
+        "logo": "/www/img/radios/.977_Country.jpg",
+        "name": ".977 Country",
+        "uuid": "961d9b63-0601-11e8-ae97-52543be04c81"
+    },
+    {
+        "logo": "/www/img/radios/Hard_Rock_Radio_FM.jpg",
+        "name": "Hard Rock Radio FM",
+        "uuid": "9afeaf65-bb57-4d76-892d-c7a39fc6c805"
+    },
+    {
+        "logo": "/www/img/radios/101_SMOOTH_JAZZ.jpg",
+        "name": "101 SMOOTH JAZZ",
+        "uuid": "d28420a4-eccf-47a2-ace1-088c7e7cb7e0"
+    },
+    {
+        "logo": "/www/img/radios/Adroit_Jazz_Underground.jpg",
+        "name": "Adroit Jazz Underground",
+        "uuid": "ea8059be-d119-4de3-b27b-0d9bd6aedb17"
+    },
+    {
+        "logo": "/www/img/radios/RFM.jpg",
+        "name": "RFM",
+        "uuid": "2dffb353-5341-4438-b67b-83de8c3efbab"
+    },
+    {
+        "logo": "/www/img/radios/Nostalgie.jpg",
+        "name": "Nostalgie",
+        "uuid": "d39ab442-6c34-4097-afd0-e298ac21e50c"
+    },
+    {
+        "logo": "/www/img/radios/RTL2.jpg",
+        "name": "RTL2",
+        "uuid": "034d52a3-30dc-4017-8495-004cd65383b1"
+    },
+    {
+        "logo": "/www/img/radios/RTL.jpg",
+        "name": "RTL",
+        "uuid": "042d3140-227c-4fac-9387-4903b692d5f2"
+    },
+    {
+        "logo": "/www/img/radios/Radio_Nova.jpg",
+        "name": "Radio Nova",
+        "uuid": "963fb390-0601-11e8-ae97-52543be04c81"
+    },
+    {
+        "logo": "/www/img/radios/Radio_de_la_Save.jpg",
+        "name": "Radio de la Save",
+        "uuid": "8426697b-dd09-40ec-bae7-3bee41892934"
+    },
+    {
+        "name": "France Bleu Occitanie",
+        "uuid": "760cc065-1e88-11ea-a955-52543be04c81",
+        "logo": "https://www.francebleu.fr/images/favicon-168.jpg"
+    }
+]

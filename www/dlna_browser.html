@@ -266,13 +266,15 @@
             }
         }
 
-        async function playNativePurist(nodeId, folderId, offsetIndex, trackTitle) {
+        async function playNativePurist(nodeId, folderId, offsetIndex, trackTitle, serverLocation = null) {
             const ips = getSelectedIps();
             if (ips.length === 0) return showNotification("Sélectionnez au moins une enceinte.", "error");
 
             showNotification("⏳ Lancement natif sur l'enceinte...", "warning");
             
             const currentFolder = navigationHistory[navigationHistory.length - 1];
+            // offsetIndex < 0 : lancement depuis une recherche -> le serveur retrouve la position réelle de la piste
+            const fromSearch = offsetIndex < 0;
 
             try {
                 const res = await fetch('/api/upnp/play', {
@@ -282,10 +284,12 @@
                         ip: ips[0], 
                         node_id: nodeId,
                         folder_id: folderId,
-                        offset: offsetIndex,
+                        offset: fromSearch ? 0 : offsetIndex,
+                        resolve_offset: fromSearch,
+                        location: serverLocation,
                         account: currentAccount,
                         track_title: escapeXml(trackTitle),
-                        folder_title: escapeXml(currentFolder.title)
+                        folder_title: escapeXml(fromSearch ? trackTitle : currentFolder.title)
                     })
                 });
                 
@@ -296,6 +300,7 @@
                     showNotification("❌ Erreur de l'enceinte", "error");
                 }
             } catch (e) {
+                console.error(e);
                 showNotification("❌ Erreur réseau", "error");
             }
         }
@@ -339,7 +344,7 @@
                         : `<i class="fas fa-search" style="color: var(--spotify-green);"></i>`;
                     
                     html += `
-                        <div class="dlna-item" onclick="playNativePurist('${item.node_id}', '${parentId}', 0, '${cleanName}')">
+                        <div class="dlna-item" onclick="playNativePurist('${item.node_id}', '${parentId}', -1, '${cleanName}', '${serverLocation}')">
                             <div class="item-icon-wrapper">${coverHtml}</div>
                             <div class="item-details">
                                 <div class="item-title">${item.name}</div>

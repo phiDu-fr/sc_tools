@@ -14,3 +14,4 @@ while read -r fichier; do
 done < /tmp/filelist.txt
 rm -f /tmp/filelist.txt
 
+wc -l export_pour_ia.txt

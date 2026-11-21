@@ -7,6 +7,8 @@ import json
 import requests
 import urllib.parse
 import time
+import html
+import threading
 import random
 import os
 import shared
@@ -480,18 +482,138 @@ def navigate_upnp():
         print(f"ERREUR UPNP DIRECT (Location: {location}) :", str(e), flush=True)
         return jsonify({'error': str(e)}), 500
         
+# ---------------------------------------------------------------------------
+# Lecture d'une piste précise dans son dossier (STORED_MUSIC)
+# ---------------------------------------------------------------------------
+_skip_gen = {}   # ip -> numéro du dernier lancement (annule les sauts périmés)
+
+
+def resolve_track_offset(location, folder_id, node_id):
+    """Position (0-based) de node_id parmi les pistes de folder_id (dossiers exclus),
+    dans le même ordre et avec le même filtrage que /api/upnp/navigate."""
+    device = upnpclient.Device(location)
+    cd = next((s for s in device.services if 'ContentDirectory' in s.service_type), None)
+    if not cd:
+        return None
+    start, index = 0, 0
+    while True:
+        res = cd.Browse(ObjectID=folder_id, BrowseFlag='BrowseDirectChildren',
+                        Filter='*', StartingIndex=start, RequestedCount=200, SortCriteria='')
+        didl = res.get('Result')
+        children = list(ET.fromstring(didl.encode('utf-8'))) if didl else []
+        if not children:
+            return None
+        for child in children:
+            if child.tag.split('}')[-1] == 'container':
+                continue
+            if child.get('id') == node_id:
+                return index
+            index += 1
+        start += len(children)
+        total = int(res.get('TotalMatches') or 0)
+        if total and start >= total:
+            return None
+
+
+def _now_playing(ip):
+    try:
+        r = requests.get(f'http://{ip}:8090/nowPlaying', timeout=2)
+        if r.status_code != 200:
+            return None
+        root = ET.fromstring(r.content)
+        item = root.find('ContentItem')
+        return {
+            'status': root.findtext('playStatus') or '',
+            'track': (root.findtext('track') or '').strip(),
+            'location': item.get('location') if item is not None else None,
+        }
+    except Exception:
+        return None
+
+
+def _press_next(ip):
+    h = {"Content-Type": "text/xml; charset=utf-8"}
+    for state in ('press', 'release'):
+        requests.post(f'http://{ip}:8090/key',
+                      data=f'<key state="{state}" sender="Gabbo">NEXT_TRACK</key>'.encode('utf-8'),
+                      headers=h, timeout=3)
+
+
+def skip_to_track(ip, folder_id, target_title, offset, gen):
+    """Avance dans la file de l'enceinte jusqu'à ce que le titre joué soit target_title."""
+    norm = lambda s: ' '.join((s or '').casefold().split())
+    target = norm(target_title)
+    alive = lambda: _skip_gen.get(ip) == gen
+
+    time.sleep(1.5)  # laisse l'enceinte basculer sur le nouveau dossier
+
+    # 1) attendre que l'enceinte joue bien CE dossier
+    for _ in range(40):
+        if not alive():
+            return
+        np = _now_playing(ip)
+        if np and np['location'] == folder_id and np['status'] in ('PLAY_STATE', 'BUFFERING_STATE'):
+            break
+        time.sleep(0.5)
+    else:
+        print(f"[skip] {ip}: dossier {folder_id} jamais devenu actif", flush=True)
+        return
+
+    # 2) avancer piste par piste, en vérifiant le titre à chaque pas
+    presses, deadline = 0, time.time() + 60
+    while presses <= offset + 3 and time.time() < deadline:
+        if not alive():
+            return
+        np = _now_playing(ip)
+        if not np or not np['track']:
+            time.sleep(0.5)
+            continue
+        if target and norm(np['track']) == target:
+            return
+        if not target and presses >= offset:
+            return
+        previous = np['track']
+        _press_next(ip)
+        presses += 1
+        for _ in range(12):          # attendre le changement de piste (~3 s max)
+            time.sleep(0.25)
+            cur = _now_playing(ip)
+            if cur and cur['track'] != previous:
+                break
+    print(f"[skip] {ip}: titre '{target_title}' non atteint", flush=True)
+
+
 @dlna_bp.route('/api/upnp/play', methods=['POST'])
 def play_upnp():
     data = request.json
     ip = data.get('ip')
     folder_id = data.get('folder_id')
+    node_id = data.get('node_id')
     offset = data.get('offset', 0)
-    
+    track_title = html.unescape(data.get('track_title') or '')
+
     account = data.get('account') 
     folder_title = data.get('folder_title', 'Dossier inconnu')
     
     if not ip or not folder_id or not account:
         return jsonify({'error': 'Données manquantes'}), 400
+
+    # Lancement depuis une recherche : on retrouve la vraie position de la piste dans son dossier parent
+    if data.get('resolve_offset'):
+        try:
+            offset = resolve_track_offset(data.get('location'), folder_id, node_id)
+        except Exception as e:
+            print("ERREUR resolve_track_offset :", e, flush=True)
+            offset = None
+        if offset is None:
+            return jsonify({'error': 'Piste introuvable dans son dossier parent'}), 404
+
+    try:
+        offset = max(int(offset or 0), 0)
+    except (TypeError, ValueError):
+        offset = 0
+
+    print(f"[play] ip={ip} folder={folder_id} node={node_id} offset={offset} titre={track_title!r}", flush=True)
 
     if ip in getattr(shared, 'server_queues', {}):
         shared.server_queues[ip] = {}
@@ -509,32 +631,10 @@ def play_upnp():
         if response.status_code == 200:
             
             if offset > 0:
-                import time
-                import threading
-                import xml.etree.ElementTree as ET
-                
-                def smart_skip_tracks():
-                    ready = False
-                    for _ in range(20):
-                        try:
-                            r = requests.get(f'http://{ip}:8090/nowPlaying', timeout=1)
-                            if r.status_code == 200:
-                                status = ET.fromstring(r.content).findtext('playStatus')
-                                if status in ['PLAY_STATE', 'BUFFERING_STATE']:
-                                    ready = True
-                                    break
-                        except:
-                            pass
-                        time.sleep(0.5)
-                    
-                    if ready:
-                        time.sleep(0.5) 
-                        for _ in range(offset):
-                            requests.post(f'http://{ip}:8090/key', data='<key state="press" sender="Gabbo">NEXT_TRACK</key>'.encode('utf-8'), headers=headers)
-                            requests.post(f'http://{ip}:8090/key', data='<key state="release" sender="Gabbo">NEXT_TRACK</key>'.encode('utf-8'), headers=headers)
-                            time.sleep(0.6) 
-                            
-                threading.Thread(target=smart_skip_tracks, daemon=True).start()
+                _skip_gen[ip] = _skip_gen.get(ip, 0) + 1
+                threading.Thread(target=skip_to_track,
+                                 args=(ip, folder_id, track_title, offset, _skip_gen[ip]),
+                                 daemon=True).start()
                 
             return jsonify({'status': 'ok'})
         else:

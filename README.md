@@ -123,7 +123,7 @@ L'application agit comme un hub multimédia permettant le contrôle multi-room, 
 1. **Cloner le dépôt Git :**
 
 ```bash
-git clone [https://github.com/phiDu-fr/sc_tools.git](https://github.com/phiDu-fr/sc_tools.git)
+git clone https://github.com/phiDu-fr/sc_tools.git
 cd sc_tools
 
 ```
@@ -163,7 +163,7 @@ source venv/bin/activate       # Sous Linux/Raspberry Pi
 2. **Installer les dépendances :**
 
 ```bash
-pip install flask flask-socketio requests apscheduler upnpclient websocket-client fastapi uvicorn
+pip install flask flask-socketio requests apscheduler upnpclient websocket-client fastapi uvicorn zeroconf musicbrainzngs mutagen websocket-client
 
 ```
 

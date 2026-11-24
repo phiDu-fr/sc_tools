@@ -12,6 +12,7 @@ import socket
 import subprocess
 from datetime import datetime
 from zeroconf import Zeroconf, ServiceBrowser
+from playlist_history import get_real_path
 
 import shared
 from dlna import play_next_in_queue
@@ -409,7 +410,10 @@ def update_speaker_state(ip):
         
         art = root.find("art")
         spk['cover'] = art.text.strip() if art is not None and art.text else ""
-        
+        spk['file_path'] = (
+            get_real_path(spk['artist'], spk['track'], spk['album'], spk['cover'])
+            if source == 'STORED_MUSIC' else ''
+        )        
         content_item = root.find("ContentItem")
         spk['playlist'] = content_item.findtext("itemName") if content_item is not None else ""
         location = content_item.attrib.get("location", "") if content_item is not None else ""

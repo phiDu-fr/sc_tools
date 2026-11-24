@@ -146,21 +146,21 @@ avahi-daemon avahi-utils base-files base-passwd bash bash-completion binfmt-supp
 bsdutils build-essential ca-certificates cifs-utils cloud-init console-setup coreutils cpio cron cron-daemon-common curl dash \
 dhcpcd-base diffutils dmidecode \
 dos2unix dosfstools e2fsprogs ed ethtool eyed3 fbset fdisk fdupes ffmpeg file findutils firmware-atheros \
-firmware-brcm80211 firmware-libertas firmware-mediatek firmware-realtek flac flatpak gcc-14-base gdb git gnupg gpiod grep gzip hostname htop init \
+firmware-brcm80211 firmware-libertas firmware-mediatek firmware-realtek flac gcc-14-base gdb git gnupg gpiod grep gzip hostname htop init \
 init-system-helpers initramfs-tools iproute2 iputils-ping jdupes jq keyboard-configuration kmod kms++-utils less \
+libxml2-dev libxslt1-dev zlib1g-dev \
 login.defs logrotate logsave lsof lua5.1 luajit man-db manpages-dev mawk mkvtoolnix \
-mount nano ncdu ncurses-base ncurses-bin net-tools netbase network-manager nfs-common nfs-kernel-server nftables nmap nodejs ntfs-3g openssl \
+mount nano ncdu ncurses-base ncurses-bin net-tools netbase network-manager nfs-common nftables nmap ntfs-3g openssl \
 openssl-provider-legacy \
-p7zip-full passwd pciutils perl-base php-curl php-fpm pi-bluetooth pipewire pipewire-audio pipewire-pulse pkg-config procps psmisc python-is-python3  \
+p7zip-full passwd pciutils perl-base php-curl pi-bluetooth pipewire pipewire-audio pipewire-pulse pkg-config procps psmisc python-is-python3  \
 python3 \
-python3-full python3-gpiozero python3-libgpiod python3-pip python3-rpi-lgpio python3-smbus2 python3-spidev python3-venv qemu-user-static \
+python3-full python3-gpiozero python3-libgpiod python3-pip python3-rpi-lgpio python3-smbus2 python3-spidev python3-venv \
 rsync samba samba-common sed \
 sensible-utils smbclient sqv ssh ssh-import-id strace sudo systemd systemd-sysv systemd-timesyncd sysvinit-utils tar tcpdump testdisk \
-tmux tree tzdata udev udisks2 unzip usb-modeswitch usbutils userconf-pi util-linux v4l-utils vim-common vim-tiny vlc wget whiptail wireless-tools wl-clipboard \
+tmux tree tzdata udev udisks2 unzip usb-modeswitch usbutils userconf-pi util-linux v4l-utils vim-common vim-tiny wget whiptail wireless-tools wl-clipboard \
 wpasupplicant xmlstarlet zip zlib1g zlib1g-dev -y
 sudo apt-get autoremove --purge -y
 </pre>
-    
     <ul>
         <li>Installation de docker :</li>
     </ul>
@@ -321,7 +321,7 @@ EOF
 <pre class="code-block">
 python3 -m venv ~/.venv
 source ~/.venv/bin/activate
-pip install requests zeroconf musicbrainzngs mutagen websocket-client
+pip install requests zeroconf musicbrainzngs mutagen websocket-client 
 source ~/.bashrc
 </pre>
 

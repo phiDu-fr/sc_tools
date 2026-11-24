@@ -7,6 +7,7 @@ import time
 import radios
 from listenbrainz import scrobble_track
 from history import record_listen, forget_speaker
+from playlist_history import record_playlist_listen, PLAYLIST_NAME, get_real_path
 
 class BoseWebsocketManager:
     def __init__(self):
@@ -228,6 +229,7 @@ class BoseWebsocketManager:
                     speakers[ip]['show_title'] = None 
                     speakers[ip]['show_desc'] = None
                     speakers[ip]['show_image'] = None
+                    speakers[ip]['file_path'] = ''
                 else:
                     speakers[ip]['state'] = 'ON'
                     
@@ -294,6 +296,12 @@ class BoseWebsocketManager:
                             if cover_url and cover_url != "SHOW_DEFAULT_IMAGE":
                                 speakers[ip]['cover'] = cover_url
 
+                    # Chemin réel du fichier diffusé (visible dans /api/data)
+                    speakers[ip]['file_path'] = (
+                        get_real_path(artist_text, track_text, album_text, speakers[ip]['cover'])
+                        if source == 'STORED_MUSIC' else ''
+                    )
+
                     # Déclenchement du scrobbling ListenBrainz si la lecture est active
                     if play_status_val == 'PLAY_STATE':
                         threading.Thread(
@@ -307,6 +315,12 @@ class BoseWebsocketManager:
                             args=(ip, artist_text, track_text, album_text),
                             daemon=True
                         ).start()
+                        if source == 'STORED_MUSIC' and speakers[ip].get('playlist') == PLAYLIST_NAME:
+                            threading.Thread(
+                                target=record_playlist_listen,
+                                args=(ip, artist_text, track_text, album_text, speakers[ip].get('cover', '')),
+                                daemon=True
+                            ).start()
                     elif play_status_val == 'STOP_STATE':
                         forget_speaker(ip)
 

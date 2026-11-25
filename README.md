@@ -1,4 +1,4 @@
-# ![img](www/img/sc_tools.png) 🔊 Bose SoundTouch Controller & Media Center (sc_tools)
+# 🔊 Bose SoundTouch Controller & Media Center (sc_tools)
 
 [![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://www.python.org/)
 [![Flask](https://img.shields.io/badge/Framework-Flask%2FSocket.IO-green.svg)](https://flask.palletsprojects.com/)

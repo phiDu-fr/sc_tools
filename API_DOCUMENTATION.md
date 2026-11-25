@@ -51,3 +51,7 @@ Spécialisé dans le téléchargement natif de podcasts Radio France via leur AP
 * **`GET /api/rf/config-check`** : Confirme que la clé de l'API Radio France est configurée et que le dossier d'enregistrement est accessible.
 * **`GET /api/rf/shows`** : Cherche et retourne la liste des émissions disponibles chez Radio France à partir d'un mot-clé ou d'une station spécifique.
 * **`POST /api/rf/download`** : Déclenche le téléchargement du (ou des) dernier(s) épisode(s) d'une émission ciblée. Le téléchargement s'exécute silencieusement en arrière-plan via un `Thread` Python pour ne pas bloquer l'application.
+
+### 7. Module "Historique"
+Titres ou stations déjà écoutées
+* **`GET /api/history`** : Retourne les titres et stations déjà écoutés récemment (limité en nombre)

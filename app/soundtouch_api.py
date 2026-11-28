@@ -12,7 +12,7 @@ import socket
 import subprocess
 from datetime import datetime
 from zeroconf import Zeroconf, ServiceBrowser
-from playlist_history import get_real_path
+from history import get_real_path
 
 import shared
 from dlna import play_next_in_queue

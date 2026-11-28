@@ -5,9 +5,7 @@ from shared import speakers, socketio
 import requests
 import time
 import radios
-from listenbrainz import scrobble_track
-from history import record_listen, forget_speaker
-from playlist_history import record_playlist_listen, PLAYLIST_NAME, get_real_path
+from history import record_listen, forget_speaker, get_real_path
 
 class BoseWebsocketManager:
     def __init__(self):
@@ -302,25 +300,14 @@ class BoseWebsocketManager:
                         if source == 'STORED_MUSIC' else ''
                     )
 
-                    # Déclenchement du scrobbling ListenBrainz si la lecture est active
+                    # Historique d'écoute (SQLite + .played_history.txt) si la lecture est active
                     if play_status_val == 'PLAY_STATE':
                         threading.Thread(
-                            target=scrobble_track,
-                            args=(ip, artist_text, track_text, album_text),
-                            daemon=True
-                        ).start()
-                        # Historique d'écoute local (SQLite)
-                        threading.Thread(
                             target=record_listen,
-                            args=(ip, artist_text, track_text, album_text),
+                            args=(ip, artist_text, track_text, album_text,
+                                  speakers[ip].get('cover', ''), source == 'STORED_MUSIC'),
                             daemon=True
                         ).start()
-                        if source == 'STORED_MUSIC' and speakers[ip].get('playlist') == PLAYLIST_NAME:
-                            threading.Thread(
-                                target=record_playlist_listen,
-                                args=(ip, artist_text, track_text, album_text, speakers[ip].get('cover', '')),
-                                daemon=True
-                            ).start()
                     elif play_status_val == 'STOP_STATE':
                         forget_speaker(ip)
 
